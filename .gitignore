@@ -40,5 +40,7 @@ desktop.ini
 
 # Project-specific
 logs_data/
-ai_playground/analysis_result*.json
+
+# AI Playground - contains secrets and test files (entire directory)
+postbro_backend/ai_playground/
 

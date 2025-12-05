@@ -178,8 +178,8 @@ local_settings.py
 test_output/
 test_results/
 
-# AI Playground outputs
-ai_playground/analysis_result*.json
+# AI Playground - contains secrets and test files (entire directory)
+ai_playground/
 
 # Python
 python
