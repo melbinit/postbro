@@ -1,0 +1,107 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: postbro_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  backend:
+    build: .
+    container_name: postbro_backend
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app  # Mount entire backend directory for live code changes
+      - media_volume:/app/media
+      - static_volume:/app/staticfiles
+      - logs_volume:/app/logs_data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"      # Rotate at 10MB
+        max-file: "5"        # Keep 5 rotated files (50MB total max per container)
+        compress: "true"     # Compress old logs
+    command: >
+      sh -c "
+      python manage.py collectstatic --noinput &&
+      python manage.py migrate --noinput &&
+      gunicorn postbro.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 4 --timeout 120 --access-logfile - --error-logfile -
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  celery-worker:
+    build: .
+    container_name: postbro_celery_worker
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - .:/app  # Mount entire backend directory for live code changes
+      - media_volume:/app/media
+      - logs_volume:/app/logs_data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"      # Rotate at 10MB
+        max-file: "5"        # Keep 5 rotated files (50MB total max per container)
+        compress: "true"     # Compress old logs
+    command: celery -A postbro worker -l info --concurrency=4 --max-tasks-per-child=1000
+    healthcheck:
+      test: ["CMD", "celery", "-A", "postbro", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # celery-beat: Not needed yet - no scheduled tasks
+  # Uncomment when you need periodic tasks:
+  # celery-beat:
+  #   build: .
+  #   container_name: postbro_celery_beat
+  #   env_file: .env
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - redis
+  #     - backend
+  #   volumes:
+  #     - logs_volume:/app/logs
+  #   command: celery -A postbro beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+networks:
+  default:
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+        - subnet: 2001:db8:1::/64
+
+volumes:
+  redis_data:
+    driver: local
+  media_volume:
+    driver: local
+  static_volume:
+    driver: local
+  logs_volume:
+    driver: local
+

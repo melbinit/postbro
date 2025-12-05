@@ -1,0 +1,79 @@
+"""
+Duplicate Post Checker
+
+Checks which URLs already have posts in the database.
+This enables fast path optimization (skip media processing, only update metrics).
+"""
+
+import logging
+from typing import List, Dict, Optional
+from social.models import Post, Platform
+from social.services.url_parser import extract_post_id
+
+logger = logging.getLogger(__name__)
+
+
+def check_existing_posts(urls: List[str], platform: str) -> Dict[str, Optional[Post]]:
+    """
+    Check which URLs already have posts in DB.
+    This enables fast path optimization (skip media processing, only update metrics).
+    
+    Args:
+        urls: List of post URLs to check
+        platform: Platform name ('instagram', 'youtube', 'x')
+        
+    Returns:
+        Dictionary mapping URL to Post instance (or None if post doesn't exist)
+    """
+    existing_posts = {}
+    
+    try:
+        # Map analysis request platform to social Platform model
+        platform_name_map = {
+            'instagram': 'instagram',
+            'x': 'twitter',  # Twitter model uses 'twitter', not 'x'
+            'youtube': 'youtube',
+        }
+        platform_name = platform_name_map.get(platform)
+        
+        if not platform_name:
+            logger.warning(f"Unknown platform {platform} for duplicate check")
+            return {url: None for url in urls}
+        
+        platform_obj = Platform.objects.get(name=platform_name)
+        
+        for url in urls:
+            post_id = extract_post_id(url, platform)
+            if not post_id:
+                existing_posts[url] = None
+                logger.debug(f"Could not extract post ID from {url}")
+                continue
+            
+            try:
+                post = Post.objects.get(
+                    platform=platform_obj,
+                    platform_post_id=post_id
+                )
+                existing_posts[url] = post
+                logger.info(f"✅ [DuplicateCheck] Found existing post for {url}: {post.id} (@{post.username})")
+            except Post.DoesNotExist:
+                existing_posts[url] = None
+                logger.info(f"🆕 [DuplicateCheck] New post for {url}")
+            except Post.MultipleObjectsReturned:
+                # Shouldn't happen due to unique_together, but handle gracefully
+                post = Post.objects.filter(
+                    platform=platform_obj,
+                    platform_post_id=post_id
+                ).first()
+                existing_posts[url] = post
+                logger.warning(f"⚠️ [DuplicateCheck] Multiple posts found for {url}, using first: {post.id if post else None}")
+                
+    except Platform.DoesNotExist:
+        logger.error(f"Platform '{platform_name}' not found in database")
+        return {url: None for url in urls}
+    except Exception as e:
+        logger.error(f"Error checking existing posts: {e}", exc_info=True)
+        return {url: None for url in urls}
+    
+    return existing_posts
+

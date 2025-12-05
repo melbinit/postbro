@@ -1,0 +1,298 @@
+request :
+
+import requests
+
+url = "https://api.twitterapi.io/twitter/tweets"
+
+querystring = {"tweet_ids":"1992678220282368038"}
+
+headers = {"X-API-Key": "new1_288cc32c7878415db2b48e9365290614"}
+
+response = requests.get(url, headers=headers, params=querystring)
+
+print(response.json())
+
+response :
+
+{
+  "tweets": [
+    {
+      "type": "tweet",
+      "id": "1992678220282368038",
+      "url": "https://x.com/totalcristiano/status/1992678220282368038",
+      "twitterUrl": "https://twitter.com/totalcristiano/status/1992678220282368038",
+      "text": "The King, @Cristiano. ❤️\n\n https://t.co/YAm5KTLm7p",
+      "source": "",
+      "retweetCount": 3422,
+      "replyCount": 100,
+      "likeCount": 37023,
+      "quoteCount": 77,
+      "viewCount": 387774,
+      "createdAt": "Sun Nov 23 19:34:44 +0000 2025",
+      "lang": "en",
+      "bookmarkCount": 760,
+      "isReply": false,
+      "inReplyToId": "",
+      "conversationId": "1992678220282368038",
+      "displayTextRange": [
+        0,
+        50
+      ],
+      "inReplyToUserId": "",
+      "inReplyToUsername": "",
+      "isPinned": false,
+      "author": {
+        "type": "user",
+        "userName": "totalcristiano",
+        "url": "https://x.com/totalcristiano",
+        "twitterUrl": "https://twitter.com/totalcristiano",
+        "id": "1095417811801915392",
+        "name": "TC",
+        "isVerified": false,
+        "isBlueVerified": true,
+        "verifiedType": null,
+        "profilePicture": "https://pbs.twimg.com/profile_images/1390997723428626433/MFnPrEHp_normal.jpg",
+        "coverPicture": "https://pbs.twimg.com/profile_banners/1095417811801915392/1693486442",
+        "description": "Real Madrid and Cristiano Ronaldo fan account.",
+        "location": "DM for promo.",
+        "followers": 510962,
+        "following": 847,
+        "status": "",
+        "canDm": true,
+        "canMediaTag": false,
+        "createdAt": "Tue Feb 12 20:22:12 +0000 2019",
+        "entities": {
+          "description": {}
+        },
+        "fastFollowersCount": 0,
+        "favouritesCount": 0,
+        "hasCustomTimelines": true,
+        "isTranslator": false,
+        "mediaCount": 13777,
+        "statusesCount": 32836,
+        "withheldInCountries": [],
+        "affiliatesHighlightedLabel": {},
+        "possiblySensitive": false,
+        "pinnedTweetIds": [],
+        "profile_bio": {
+          "description": "Real Madrid and Cristiano Ronaldo fan account.",
+          "entities": {
+            "description": {}
+          },
+          "withheld_in_countries": []
+        },
+        "isAutomated": false,
+        "automatedBy": null
+      },
+      "extendedEntities": {
+        "media": [
+          {
+            "additional_media_info": {
+              "monetizable": false,
+              "source_user": {
+                "user_results": {
+                  "rest_id": "1924192609968529408",
+                  "result": {
+                    "__typename": "User",
+                    "action_counts": {
+                      "favorites_count": 24
+                    },
+                    "avatar": {
+                      "image_url": "https://pbs.twimg.com/profile_images/1950179554095513600/xFcMAbQE_normal.png"
+                    },
+                    "banner": {
+                      "image_url": "https://pbs.twimg.com/profile_banners/1924192609968529408/1758528929"
+                    },
+                    "core": {
+                      "created_at": "Sun May 18 19:57:33 +0000 2025",
+                      "name": "رياضة ثمانية",
+                      "screen_name": "thmanyahsports"
+                    },
+                    "dm_permissions": {
+                      "can_dm": false
+                    },
+                    "exclusive_tweet_following": false,
+                    "identity_profile_labels_highlighted_label": {
+                      "label": {
+                        "badge": {
+                          "url": "https://pbs.twimg.com/profile_images/1763202599698759680/KMKU4U_X_bigger.jpg"
+                        },
+                        "description": "شركة ثمانية",
+                        "url": {
+                          "url": "https://twitter.com/thmanyahCompany",
+                          "url_type": "DeepLink"
+                        },
+                        "user_label_type": "BusinessLabel",
+                        "user_label_display_type": "Badge"
+                      }
+                    },
+                    "location": {
+                      "location": ""
+                    },
+                    "media_permissions": {
+                      "can_media_tag": false
+                    },
+                    "notifications_settings": {},
+                    "pinned_items": {
+                      "tweet_ids_str": [
+                        "1992690686676939071"
+                      ]
+                    },
+                    "privacy": {},
+                    "private_super_following": false,
+                    "profile_bio": {
+                      "description": "البطولات السعودية بتجربة جديدة ⚽️ — حمّل تطبيق ثمانية 👇",
+                      "entities": {
+                        "description": {},
+                        "url": {
+                          "urls": [
+                            {
+                              "display_url": "appthmanyah.go.link/drSim",
+                              "expanded_url": "https://appthmanyah.go.link/drSim",
+                              "indices": [
+                                0,
+                                23
+                              ],
+                              "url": "https://t.co/Wcyfi46Dyu"
+                            }
+                          ]
+                        }
+                      },
+                      "withheld_in_countries": []
+                    },
+                    "profile_image_shape": "Square",
+                    "profile_metadata": {
+                      "profile_interstitial_type": "",
+                      "profile_link_color": "1DA1F2"
+                    },
+                    "profile_translation": {
+                      "translator_type_enum": "None"
+                    },
+                    "properties": {
+                      "has_extended_profile": true
+                    },
+                    "relationship_counts": {
+                      "followers": 268855,
+                      "following": 6
+                    },
+                    "relationship_perspectives": {},
+                    "rest_id": "1924192609968529408",
+                    "super_follow_eligible": false,
+                    "super_followed_by": false,
+                    "super_following": false,
+                    "tweet_counts": {
+                      "media_tweets": 7100,
+                      "tweets": 7388
+                    },
+                    "website": {
+                      "url": "https://t.co/Wcyfi46Dyu"
+                    },
+                    "verification": {
+                      "is_blue_verified": true,
+                      "verified_type": "Business"
+                    }
+                  }
+                }
+              }
+            },
+            "allow_download_status": {
+              "allow_download": true
+            },
+            "display_url": "pic.twitter.com/YAm5KTLm7p",
+            "expanded_url": "https://x.com/thmanyahsports/status/1992677801753764115/video/1",
+            "ext_media_availability": {
+              "status": "Available"
+            },
+            "id_str": "1992677594639011840",
+            "indices": [
+              27,
+              50
+            ],
+            "media_key": "13_1992677594639011840",
+            "media_results": {
+              "id": "QXBpTWVkaWFSZXN1bHRzOgwABAoAARunabb0VpAAAAA=",
+              "result": {
+                "__typename": "ApiMedia",
+                "id": "QXBpTWVkaWE6DAAECgABG6dptvRWkAAAAA==",
+                "media_key": "13_1992677594639011840"
+              }
+            },
+            "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/1992677594639011840/img/Sp9dlYT2p1-ewbma.jpg",
+            "original_info": {
+              "focus_rects": [],
+              "height": 1080,
+              "width": 1920
+            },
+            "sizes": {
+              "large": {
+                "h": 1080,
+                "w": 1920
+              }
+            },
+            "source_status_id_str": "1992677801753764115",
+            "source_user_id_str": "1924192609968529408",
+            "type": "video",
+            "url": "https://t.co/YAm5KTLm7p",
+            "video_info": {
+              "aspect_ratio": [
+                16,
+                9
+              ],
+              "duration_millis": 5118,
+              "variants": [
+                {
+                  "content_type": "application/x-mpegURL",
+                  "url": "https://video.twimg.com/amplify_video/1992677594639011840/pl/6FTZMyrGk3rtBmLr.m3u8?tag=21"
+                },
+                {
+                  "bitrate": 256000,
+                  "content_type": "video/mp4",
+                  "url": "https://video.twimg.com/amplify_video/1992677594639011840/vid/avc1/480x270/pMBvE2s4J6nGgI-L.mp4?tag=21"
+                },
+                {
+                  "bitrate": 832000,
+                  "content_type": "video/mp4",
+                  "url": "https://video.twimg.com/amplify_video/1992677594639011840/vid/avc1/640x360/dsE1w8x-juXKyq9W.mp4?tag=21"
+                },
+                {
+                  "bitrate": 2176000,
+                  "content_type": "video/mp4",
+                  "url": "https://video.twimg.com/amplify_video/1992677594639011840/vid/avc1/1280x720/07oxfHdjoReXimVw.mp4?tag=21"
+                },
+                {
+                  "bitrate": 10368000,
+                  "content_type": "video/mp4",
+                  "url": "https://video.twimg.com/amplify_video/1992677594639011840/vid/avc1/1920x1080/KMs93uckYKA7cTYO.mp4?tag=21"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "card": {},
+      "place": {},
+      "entities": {
+        "user_mentions": [
+          {
+            "id_str": "155659213",
+            "indices": [
+              10,
+              20
+            ],
+            "name": "Cristiano Ronaldo",
+            "screen_name": "Cristiano"
+          }
+        ]
+      },
+      "isRetweet": false,
+      "isQuote": false,
+      "isConversationControlled": false,
+      "quoted_tweet": null,
+      "retweeted_tweet": null,
+      "isLimitedReply": false
+    }
+  ],
+  "status": "success",
+  "msg": "success",
+  "code": 0
+}
