@@ -112,7 +112,10 @@ class Plan(models.Model):
 class Subscription(models.Model):
     class Status(models.TextChoices):
         ACTIVE = 'active', _('Active')
+        PENDING = 'pending', _('Pending Payment')
         TRIAL = 'trial', _('Trial')
+        FAILED = 'failed', _('Payment Failed')
+        CANCELING = 'canceling', _('Canceling at Period End')
         CANCELLED = 'cancelled', _('Cancelled')
         EXPIRED = 'expired', _('Expired')
     
@@ -123,7 +126,7 @@ class Subscription(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')
     plan = models.ForeignKey(Plan, on_delete=models.PROTECT)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.TRIAL)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(null=True, blank=True)
     
@@ -143,6 +146,14 @@ class Subscription(models.Model):
         max_length=255,
         blank=True,
         help_text='Payment provider Subscription ID (e.g., Stripe sub_xxx or Dodo subscription ID)'
+    )
+    downgrade_to_plan = models.ForeignKey(
+        'Plan',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='scheduled_downgrades',
+        help_text='Plan to downgrade to when current period ends (only set when status is CANCELING for downgrades)'
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

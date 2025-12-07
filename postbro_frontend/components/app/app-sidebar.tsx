@@ -1,8 +1,8 @@
 "use client"
 
-import { useMemo, memo, useState } from "react"
+import { useMemo, memo, useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -45,7 +45,7 @@ const ProfileSection = memo(({ user, isLoading, router, onNavigate, onOpenSettin
     .toUpperCase() || user?.email[0].toUpperCase() || 'U'
 
   return (
-    <div className="p-4 border-b border-border/30 flex-shrink-0">
+    <div className="p-4 border-b border-border/40 flex-shrink-0">
       {isLoading ? (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
@@ -57,24 +57,24 @@ const ProfileSection = memo(({ user, isLoading, router, onNavigate, onOpenSettin
           </div>
         </div>
       ) : user ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <Avatar className="size-10">
+            <Avatar className="size-10 ring-2 ring-primary/10 ring-offset-2 ring-offset-background">
               <AvatarImage src={user.profile_image || undefined} alt={user.full_name || user.email} />
-              <AvatarFallback className="text-sm bg-primary/10 text-primary font-medium">
+              <AvatarFallback className="text-sm bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.full_name || 'User'}</p>
+              <p className="text-sm font-semibold truncate">{user.full_name || 'User'}</p>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <Button
-              variant="ghost"
+              variant="default"
               size="sm"
-              className="justify-start w-full"
+              className="justify-start w-full bg-primary/10 text-primary hover:bg-primary/20 border-0 shadow-none"
               onClick={() => {
                 router.push('/app')
                 onNavigate?.()
@@ -86,10 +86,11 @@ const ProfileSection = memo(({ user, isLoading, router, onNavigate, onOpenSettin
             <Button
               variant="ghost"
               size="sm"
-              className="justify-start w-full"
+              className="justify-start w-full text-muted-foreground hover:text-foreground"
               onClick={() => {
                 onOpenSettings()
-                onNavigate?.()
+                // Don't call onNavigate here - let the modal appear on top of the sidebar
+                // The modal will handle closing itself and then user can close sidebar if needed
               }}
             >
               <Settings className="mr-2 size-4" />
@@ -135,7 +136,22 @@ export const AppSidebar = memo(function AppSidebar({ onNavigate, selectedAnalysi
   const [activeTab, setActiveTab] = useState<'analyses' | 'notes'>('analyses')
   
   // Settings modal state
+  const searchParams = useSearchParams()
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
+  const [defaultSettingsTab, setDefaultSettingsTab] = useState<string>("general")
+  
+  // Check for settings query parameter on mount and when it changes
+  useEffect(() => {
+    const settingsParam = searchParams.get('settings')
+    if (settingsParam) {
+      setDefaultSettingsTab(settingsParam)
+      setIsSettingsModalOpen(true)
+      // Clean up URL by removing query parameter after opening modal
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete('settings')
+      router.replace(newUrl.pathname + (newUrl.search ? newUrl.search : ''))
+    }
+  }, [searchParams, router])
 
 
   const getStatusIcon = (status: string) => {
@@ -168,7 +184,7 @@ export const AppSidebar = memo(function AppSidebar({ onNavigate, selectedAnalysi
 
   return (
     <>
-      <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex flex-col h-full overflow-hidden bg-gradient-subtle">
         {/* Profile Section - Memoized, never refreshes - Shows independently */}
         <ProfileSection 
           user={user} 
@@ -180,14 +196,14 @@ export const AppSidebar = memo(function AppSidebar({ onNavigate, selectedAnalysi
 
       {/* Tabs for Analyses and Notes */}
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="p-4 border-b border-border/30 flex-shrink-0">
-          <div className="flex items-center gap-4">
+        <div className="p-4 border-b border-border/40 flex-shrink-0">
+          <div className="flex items-center gap-1 p-1 bg-muted/40 rounded-lg">
             <button
               onClick={() => setActiveTab('analyses')}
-              className={`flex items-center gap-2 text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-md transition-all duration-200 ${
                 activeTab === 'analyses'
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
               }`}
             >
               <History className="size-4" />
@@ -195,10 +211,10 @@ export const AppSidebar = memo(function AppSidebar({ onNavigate, selectedAnalysi
             </button>
             <button
               onClick={() => setActiveTab('notes')}
-              className={`flex items-center gap-2 text-sm font-semibold transition-colors ${
+              className={`flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-md transition-all duration-200 ${
                 activeTab === 'notes'
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
               }`}
             >
               <FileText className="size-4" />
@@ -223,7 +239,7 @@ export const AppSidebar = memo(function AppSidebar({ onNavigate, selectedAnalysi
               </div>
             ) : (
               <>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {analyses.map((analysis) => {
                     const isSelected = selectedAnalysisId === analysis.id
                     return (
@@ -236,19 +252,25 @@ export const AppSidebar = memo(function AppSidebar({ onNavigate, selectedAnalysi
                           // Use Next.js router for client-side navigation (no full page refresh)
                           router.push(`/app/${analysis.id}`)
                         }}
-                        className={`w-full text-left p-3 rounded-md transition-colors ${
+                        className={`w-full text-left p-3 rounded-xl transition-all duration-200 group ${
                           isSelected
-                            ? 'bg-primary/10 border border-primary/20'
-                            : 'hover:bg-muted/50'
+                            ? 'bg-gradient-to-r from-primary/12 to-primary/6 border border-primary/25 shadow-sm'
+                            : 'hover:bg-muted/60 hover:shadow-sm border border-transparent'
                         }`}
                       >
-                        <div className="flex items-start gap-2">
-                          <div className="mt-0.5">
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-0.5 p-1.5 rounded-lg transition-colors ${
+                            isSelected 
+                              ? 'bg-primary/15 text-primary' 
+                              : 'bg-muted/50 text-muted-foreground group-hover:bg-muted group-hover:text-foreground'
+                          }`}>
                             {getPlatformIcon(analysis.platform)}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <p className="text-sm font-medium truncate">
+                              <p className={`text-sm font-medium truncate transition-colors ${
+                                isSelected ? 'text-foreground' : 'group-hover:text-foreground'
+                              }`}>
                                 {analysis.display_name 
                                   ? analysis.display_name
                                   : analysis.username
@@ -308,6 +330,7 @@ export const AppSidebar = memo(function AppSidebar({ onNavigate, selectedAnalysi
       <SettingsModal 
         isOpen={isSettingsModalOpen} 
         onClose={() => setIsSettingsModalOpen(false)}
+        defaultTab={defaultSettingsTab}
       />
     </>
   )

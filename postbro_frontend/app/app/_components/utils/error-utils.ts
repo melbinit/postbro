@@ -6,14 +6,14 @@
  * Sanitize error messages to never show raw Python exceptions to users
  */
 export function sanitizeErrorMessage(message: string): string {
-  if (!message) return 'An error occurred. Please try again.'
+  if (!message) return 'Something went wrong. Please try again.'
   
   // Never show raw Python exceptions
   if (message.includes("'NoneType' object has no attribute")) {
-    return 'Failed to process media. Please try again.'
+    return 'We had trouble processing the media. Please try again.'
   }
   if (message.includes('AttributeError')) {
-    return 'An error occurred while processing your request. Please try again.'
+    return 'Something went wrong on our end. Please try again.'
   }
   if (message.includes('Unexpected error:')) {
     // Extract the part after "Unexpected error:" and sanitize it
@@ -22,7 +22,7 @@ export function sanitizeErrorMessage(message: string): string {
       const errorPart = parts[1].trim()
       // If it looks like a Python exception, replace it
       if (errorPart.includes("'") || errorPart.includes('object has no attribute')) {
-        return 'An unexpected error occurred. Please try again or contact support if this persists.'
+        return 'Something unexpected happened. Please try again.'
       }
     }
   }
@@ -36,7 +36,7 @@ export function sanitizeErrorMessage(message: string): string {
  */
 export function getFailureMessage(stage: string | undefined): { message: string; stage: string } {
   if (!stage) {
-    return { message: 'Analysis failed. Please try again.', stage: 'unknown' }
+    return { message: "We couldn't complete the analysis", stage: 'unknown' }
   }
   
   const stageLower = stage.toLowerCase()
@@ -44,7 +44,7 @@ export function getFailureMessage(stage: string | undefined): { message: string;
   // Post fetching failures
   if (stageLower.includes('fetching_posts') || stageLower.includes('fetching_social') || stageLower === 'fetching_posts') {
     return { 
-      message: 'Failed to fetch post data from the platform. Please check the URL and try again.', 
+      message: "Couldn't fetch the post. Please check the URL is correct and the post is public.", 
       stage: 'post_fetch' 
     }
   }
@@ -52,7 +52,7 @@ export function getFailureMessage(stage: string | undefined): { message: string;
   // Media processing failures
   if (stageLower.includes('collecting_media') || stageLower.includes('media') || stageLower === 'collecting_media') {
     return { 
-      message: 'Failed to process media (images/videos). Please try again.', 
+      message: "Had trouble processing the media. This sometimes happens with certain formats.", 
       stage: 'media_processing' 
     }
   }
@@ -60,7 +60,7 @@ export function getFailureMessage(stage: string | undefined): { message: string;
   // Transcription failures
   if (stageLower.includes('transcribing') || stageLower === 'transcribing') {
     return { 
-      message: 'Failed to transcribe audio. The analysis will continue without transcript.', 
+      message: "Couldn't transcribe the audio, but the analysis can continue without it.", 
       stage: 'transcription' 
     }
   }
@@ -68,16 +68,15 @@ export function getFailureMessage(stage: string | undefined): { message: string;
   // Gemini/AI analysis failures
   if (stageLower.includes('analysing') || stageLower.includes('analysis') || stageLower === 'analysing') {
     return { 
-      message: 'Failed to analyze with AI. Please try again.', 
+      message: "Our AI had trouble analyzing this post. This is usually temporary.", 
       stage: 'ai_analysis' 
     }
   }
   
   // Generic failure
   return { 
-    message: 'Analysis failed. Please try again.', 
+    message: "We couldn't complete the analysis", 
     stage: 'unknown' 
   }
 }
-
 

@@ -71,7 +71,9 @@ def extract_post_id(url: str, platform: Optional[str] = None) -> Optional[str]:
     if not platform:
         return None
     
-    url_lower = url.lower().strip()
+    # Don't lowercase - preserve original case of IDs
+    # Use case-insensitive regex for domain matching only
+    url = url.strip()
     
     # Instagram post ID extraction
     # Examples:
@@ -84,7 +86,7 @@ def extract_post_id(url: str, platform: Optional[str] = None) -> Optional[str]:
             r'instagr\.am/p/([A-Za-z0-9_-]+)',
         ]
         for pattern in patterns:
-            match = re.search(pattern, url_lower)
+            match = re.search(pattern, url, re.IGNORECASE)
             if match:
                 return match.group(1)
     
@@ -97,7 +99,7 @@ def extract_post_id(url: str, platform: Optional[str] = None) -> Optional[str]:
             r'(?:x|twitter)\.com/\w+/status/(\d+)',
         ]
         for pattern in patterns:
-            match = re.search(pattern, url_lower)
+            match = re.search(pattern, url, re.IGNORECASE)
             if match:
                 return match.group(1)
     
@@ -124,7 +126,7 @@ def extract_post_id(url: str, platform: Optional[str] = None) -> Optional[str]:
             r'[#&]v=([A-Za-z0-9_-]{11})',
         ]
         for pattern in patterns:
-            match = re.search(pattern, url_lower)
+            match = re.search(pattern, url, re.IGNORECASE)
             if match:
                 video_id = match.group(1)
                 # Validate it's exactly 11 chars (YouTube ID standard length)

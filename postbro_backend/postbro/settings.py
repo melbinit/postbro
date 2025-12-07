@@ -32,7 +32,16 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Allow ngrok domains for local webhook testing
+_default_hosts = 'localhost,127.0.0.1'
+_allowed_hosts = os.getenv('ALLOWED_HOSTS', _default_hosts).split(',')
+
+# Add current ngrok domain for webhook testing (update if ngrok restarts)
+# Get from: curl -s http://localhost:4040/api/tunnels | python3 -c "import sys, json; print(json.load(sys.stdin)['tunnels'][0]['public_url'].replace('https://', '').replace('http://', ''))"
+if DEBUG:
+    _allowed_hosts.append('58ca3475465e.ngrok-free.app')  # Current ngrok domain
+
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts if h.strip()]
 
 
 # Application definition
@@ -69,6 +78,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'postbro.middleware.AllowNgrokHostsMiddleware',  # Allow ngrok domains in DEBUG mode
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',

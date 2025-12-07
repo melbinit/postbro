@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Send, AlertCircle, RefreshCw } from "lucide-react"
+import { Send, AlertCircle, RefreshCw, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -290,40 +290,40 @@ export function ChatInterface({ postAnalysisId, className }: ChatInterfaceProps)
           {/* Loading indicator when sending */}
           {isSending && (
             <div className="flex gap-3 md:gap-4">
-              <div className="flex-shrink-0">
-                <div className="size-7 md:size-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-                  <span className="text-white text-xs md:text-sm font-bold">PB</span>
+              <div className="flex-shrink-0 mt-0.5">
+                <div className="size-7 md:size-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center ring-2 ring-background">
+                  <Sparkles className="h-3.5 w-3.5 md:h-4 md:w-4 text-white" />
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="bg-card/60 backdrop-blur-sm rounded-2xl rounded-tl-sm px-3 py-2.5 md:px-4 md:py-3 border border-border/30 inline-flex items-center gap-2">
-                  <Spinner className="h-4 w-4" />
-                  <span className="text-sm text-muted-foreground">Thinking...</span>
+              <div className="flex-1 min-w-0 pt-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm text-muted-foreground">Thinking</span>
+                  <span className="flex gap-0.5">
+                    <span className="size-1 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
+                    <span className="size-1 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
+                    <span className="size-1 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
+                  </span>
                 </div>
               </div>
             </div>
           )}
           
-          {/* Error message as a chat bubble */}
+          {/* Error message - clean inline style */}
           {error && session && (
             <div className="flex gap-3 md:gap-4">
-              <div className="flex-shrink-0">
-                <div className="size-7 md:size-8 rounded-full bg-destructive/10 flex items-center justify-center">
-                  <AlertCircle className="h-4 w-4 text-destructive" />
+              <div className="flex-shrink-0 mt-0.5">
+                <div className="size-7 md:size-8 rounded-full bg-destructive/10 flex items-center justify-center ring-2 ring-background">
+                  <AlertCircle className="h-3.5 w-3.5 md:h-4 md:w-4 text-destructive" />
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="bg-destructive/5 border border-destructive/20 rounded-2xl rounded-tl-sm px-3 py-2.5 md:px-4 md:py-3">
-                  <p className="text-sm text-destructive">{error}</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setError(null)}
-                    className="mt-2 h-7 text-xs"
-                  >
-                    Dismiss
-                  </Button>
-                </div>
+              <div className="flex-1 min-w-0 pt-0.5">
+                <p className="text-sm text-destructive">{error}</p>
+                <button
+                  onClick={() => setError(null)}
+                  className="mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Dismiss
+                </button>
               </div>
             </div>
           )}
@@ -338,19 +338,19 @@ export function ChatInterface({ postAnalysisId, className }: ChatInterfaceProps)
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setInput("Can you generate more content ideas like this?")}
-              className="px-2.5 py-1.5 text-xs rounded-full bg-muted hover:bg-muted/80 transition-colors touch-manipulation"
+              className="px-3 py-1.5 text-xs font-medium rounded-full border border-border/60 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-all touch-manipulation"
             >
               Generate more ideas
             </button>
             <button
               onClick={() => setInput("Explain the viral formula in simple terms")}
-              className="px-2.5 py-1.5 text-xs rounded-full bg-muted hover:bg-muted/80 transition-colors touch-manipulation"
+              className="px-3 py-1.5 text-xs font-medium rounded-full border border-border/60 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-all touch-manipulation"
             >
               Explain viral formula
             </button>
             <button
               onClick={() => setInput("How can I apply this to my content?")}
-              className="px-2.5 py-1.5 text-xs rounded-full bg-muted hover:bg-muted/80 transition-colors touch-manipulation"
+              className="px-3 py-1.5 text-xs font-medium rounded-full border border-border/60 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-all touch-manipulation"
             >
               How to apply this
             </button>
@@ -358,16 +358,16 @@ export function ChatInterface({ postAnalysisId, className }: ChatInterfaceProps)
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="border-t border-border/50 p-3 md:p-4 pb-safe">
-        <div className="flex gap-2 items-end">
+      {/* Input Area - Modern floating style */}
+      <div className="p-3 md:p-4 pb-safe">
+        <div className="flex gap-2 items-end bg-muted/50 rounded-2xl border border-border/40 p-1.5 focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
           <Textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message PostBro..."
-            className="min-h-[44px] max-h-[160px] md:max-h-[200px] resize-none text-base md:text-sm"
+            placeholder="Ask about this analysis..."
+            className="min-h-[40px] max-h-[140px] md:max-h-[180px] resize-none text-[15px] border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
             disabled={isSending || isLoading}
             rows={1}
           />
@@ -375,7 +375,7 @@ export function ChatInterface({ postAnalysisId, className }: ChatInterfaceProps)
             onClick={handleSend}
             disabled={!input.trim() || isSending || isLoading}
             size="icon"
-            className="shrink-0 h-[44px] w-[44px] touch-manipulation"
+            className="shrink-0 h-9 w-9 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-30 touch-manipulation transition-all"
           >
             {isSending ? (
               <Spinner className="h-4 w-4" />
@@ -384,6 +384,9 @@ export function ChatInterface({ postAnalysisId, className }: ChatInterfaceProps)
             )}
           </Button>
         </div>
+        <p className="text-[10px] text-muted-foreground/60 text-center mt-2">
+          Press Enter to send, Shift+Enter for new line
+        </p>
       </div>
     </div>
   )

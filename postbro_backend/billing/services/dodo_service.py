@@ -229,6 +229,76 @@ class DodoPaymentsService:
         logger.info(f"✅ [Dodo] Subscription cancelled: {subscription_id}")
         return subscription
     
+    def change_subscription_plan(
+        self,
+        subscription_id: str,
+        product_id: str,
+        proration_billing_mode: str = 'prorated_immediately',
+        quantity: int = 1,
+        metadata: Optional[Dict] = None
+    ) -> Dict:
+        """
+        Change subscription plan using Dodo's change-plan API
+        
+        Args:
+            subscription_id: Dodo subscription ID (e.g., "sub_xxx")
+            product_id: New product ID
+            proration_billing_mode: 'prorated_immediately' | 'difference_immediately' | 'full_immediately'
+            quantity: Product quantity (default: 1)
+            metadata: Additional metadata (optional)
+            
+        Returns:
+            Response with status, invoice_id, payment_id
+        """
+        data = {
+            'product_id': product_id,
+            'quantity': quantity,
+            'proration_billing_mode': proration_billing_mode,
+        }
+        
+        if metadata:
+            data['metadata'] = metadata
+        
+        logger.info(f"🔄 [Dodo] Changing subscription plan: {subscription_id} → product {product_id} (mode: {proration_billing_mode})")
+        result = self._make_request('POST', f'/subscriptions/{subscription_id}/change-plan', data=data)
+        logger.info(f"✅ [Dodo] Plan change initiated: {result.get('status')} (payment_id: {result.get('payment_id')})")
+        return result
+    
+    def create_refund(
+        self,
+        payment_id: str,
+        amount: float,
+        reason: Optional[str] = None,
+        metadata: Optional[Dict] = None
+    ) -> Dict:
+        """
+        Create a refund for a payment
+        
+        Args:
+            payment_id: Dodo payment ID (e.g., "pay_xxx")
+            amount: Refund amount in dollars (will be converted to cents)
+            reason: Reason for refund (optional)
+            metadata: Additional metadata (optional)
+            
+        Returns:
+            Refund object from Dodo API
+        """
+        data = {
+            'payment_id': payment_id,
+            'amount': int(amount * 100),  # Convert to cents
+        }
+        
+        if reason:
+            data['reason'] = reason
+        
+        if metadata:
+            data['metadata'] = metadata
+        
+        logger.info(f"💰 [Dodo] Creating refund: ${amount} for payment {payment_id}")
+        refund = self._make_request('POST', '/refunds', data=data)
+        logger.info(f"✅ [Dodo] Refund created: {refund.get('id')}")
+        return refund
+    
     def verify_webhook_signature(
         self,
         payload: bytes,
@@ -244,6 +314,12 @@ class DodoPaymentsService:
         Returns:
             True if signature is valid, False otherwise
         """
+        # Skip verification in DEBUG mode for local testing
+        from django.conf import settings
+        if settings.DEBUG:
+            logger.warning("⚠️ [Dodo] DEBUG mode: Skipping webhook signature verification")
+            return True
+        
         if not self.webhook_secret:
             logger.warning("⚠️ [Dodo] Webhook secret not configured, skipping signature verification")
             return True  # Allow in development, but should be False in production

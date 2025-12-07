@@ -1,7 +1,7 @@
 import { type AnalysisRequest, type Post } from "@/lib/api"
 import { AnalysisForm } from "@/components/app/analysis-form"
 import { ChatInput } from "@/components/app/chat-input"
-import { XCircle } from "lucide-react"
+import { AlertCircle, RefreshCw } from "lucide-react"
 import { getFailureMessage } from "../utils/error-utils"
 
 interface InputAreaProps {
@@ -62,15 +62,19 @@ export function InputArea({
           
           return (
             <div className="w-full max-w-3xl mx-auto">
-              <div className="mb-4 p-4 bg-destructive/5 border border-destructive/50 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              {/* Modern error notice */}
+              <div className="mb-5 p-4 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex-shrink-0">
+                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-destructive font-medium mb-1">
+                    <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-1">
                       {failureInfo.message}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      You can retry the analysis below. The form is pre-filled with your previous input.
+                    <p className="text-xs text-amber-700/80 dark:text-amber-300/70 flex items-center gap-1.5">
+                      <RefreshCw className="h-3 w-3" />
+                      Ready to retry with your previous input
                     </p>
                   </div>
                 </div>

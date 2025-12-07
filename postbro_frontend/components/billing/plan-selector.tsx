@@ -4,32 +4,50 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Check, Loader2, AlertCircle } from "lucide-react"
-import { plansApi, type Plan } from "@/lib/api"
+import { plansApi, type Plan, type Subscription } from "@/lib/api"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "next/navigation"
 import { useAuth, useUser } from "@clerk/nextjs"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
 
 interface PlanSelectorProps {
   currentPlanId?: string
   onPlanSelected?: (planId: string) => void
+  onSuccessMessage?: (message: string) => void
   showCurrentPlan?: boolean
   compact?: boolean
+  currentSubscription?: Subscription | null
 }
 
 export function PlanSelector({ 
   currentPlanId, 
   onPlanSelected,
+  onSuccessMessage,
   showCurrentPlan = true,
-  compact = false 
+  compact = false,
+  currentSubscription
 }: PlanSelectorProps) {
   const [plans, setPlans] = useState<Plan[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [subscribingPlanId, setSubscribingPlanId] = useState<string | null>(null)
+  const [showDowngradeDialog, setShowDowngradeDialog] = useState(false)
+  const [pendingPlan, setPendingPlan] = useState<Plan | null>(null)
   const router = useRouter()
   const { isSignedIn, isLoaded, getToken } = useAuth()
   const { user } = useUser()
+  const { toast } = useToast()
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -56,6 +74,20 @@ export function PlanSelector({
     fetchPlans()
   }, [])
 
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return ''
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })
+    } catch {
+      return dateString
+    }
+  }
+
   const handleSubscribe = async (plan: Plan) => {
     // Wait for Clerk to load
     if (!isLoaded) {
@@ -70,6 +102,18 @@ export function PlanSelector({
       return
     }
     
+    // Check if this is a downgrade - show confirmation dialog
+    if (currentSubscription && currentSubscription.plan && parseFloat(plan.price) < parseFloat(currentSubscription.plan.price)) {
+      setPendingPlan(plan)
+      setShowDowngradeDialog(true)
+        return
+    }
+    
+    // Proceed with subscription (upgrade or new)
+    await proceedWithSubscription(plan)
+  }
+
+  const proceedWithSubscription = async (plan: Plan) => {
     console.log('✅ [PlanSelector] User is signed in, proceeding with subscription')
     
     // Get token before making API call
@@ -102,7 +146,11 @@ export function PlanSelector({
         }
       } catch (err) {
         console.error('Failed to subscribe:', err)
-        alert(err instanceof Error ? err.message : 'Failed to subscribe to plan')
+        toast({
+          variant: "destructive",
+          title: "Subscription Failed",
+          description: err instanceof Error ? err.message : 'Failed to subscribe to plan',
+        })
       } finally {
         setSubscribingPlanId(null)
       }
@@ -113,31 +161,82 @@ export function PlanSelector({
     try {
       setSubscribingPlanId(plan.id)
       const response = await plansApi.subscribeToPlan(plan.id, authToken)
+      console.log('🔍 [PlanSelector] Subscribe response:', response)
       
-      // Check if we got a checkout URL (paid plan)
+      // Check if we got a checkout URL (paid plan - upgrade or new subscription)
       if (response.checkout_url) {
+        console.log('✅ [PlanSelector] Redirecting to checkout:', response.checkout_url)
         // Redirect to Dodo checkout
         window.location.href = response.checkout_url
-      } else if (response.subscription) {
-        // Free plan or already subscribed
+        // Don't reset subscribingPlanId here - let redirect happen
+        return
+      } 
+      
+      // Handle downgrade response (has downgrade flag)
+      if (response.downgrade && response.subscription) {
+        console.log('📅 [PlanSelector] Downgrade scheduled:', response.message)
+        console.log('📅 [PlanSelector] Downgrade subscription data:', response.subscription)
+        
+        // Show success message via toast
+        const message = response.message || 'Downgrade scheduled successfully'
+        toast({
+          title: "Downgrade Scheduled",
+          description: message,
+        })
+        
+        // Also call callback if provided
+        if (onSuccessMessage) {
+          onSuccessMessage(message)
+        }
+        
+        // Refresh subscription if callback exists
+        if (onPlanSelected) {
+          await onPlanSelected(plan.id)  // Make it async and await
+        } else {
+          window.location.reload()
+        }
+        setSubscribingPlanId(null) // Reset loading state
+        return
+      }
+      
+      // Handle subscription response (free plan or already subscribed)
+      if (response.subscription) {
+        console.log('✅ [PlanSelector] Subscription created/updated')
         if (onPlanSelected) {
           onPlanSelected(plan.id)
         } else {
           window.location.reload()
         }
+        setSubscribingPlanId(null) // Reset loading state
+        return
       }
+      
+      // No valid response - show error
+      console.error('❌ [PlanSelector] Invalid response - no checkout_url, downgrade, or subscription:', response)
+      toast({
+        variant: "destructive",
+        title: "Subscription Failed",
+        description: response.message || 'Failed to process subscription. Please try again.',
+      })
+      setSubscribingPlanId(null)
+      
     } catch (err: any) {
-      console.error('Failed to create subscription:', err)
+      console.error('❌ [PlanSelector] Failed to create subscription:', err)
       
       // Handle authentication errors - redirect to login
       if (err?.status === 401 || err?.status === 403) {
         console.log('🔒 [PlanSelector] Authentication required, redirecting to login')
         router.push(`/login?redirect=/&plan=${plan.id}`)
+        setSubscribingPlanId(null)
         return
       }
       
       const errorMessage = err?.data?.message || err?.data?.detail || err?.message || 'Failed to create subscription'
-      alert(errorMessage)
+      toast({
+        variant: "destructive",
+        title: "Subscription Failed",
+        description: errorMessage,
+      })
       setSubscribingPlanId(null)
     }
   }
@@ -179,7 +278,54 @@ export function PlanSelector({
   // Sort plans by price
   const sortedPlans = [...plans].sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
 
+  // Calculate downgrade dialog content
+  const downgradeDialogContent = pendingPlan && currentSubscription ? {
+    currentPlan: currentSubscription.plan.name,
+    newPlan: pendingPlan.name,
+    endDate: currentSubscription.end_date 
+      ? formatDate(currentSubscription.end_date)
+      : 'the end of your billing period'
+  } : null
+
   return (
+    <>
+      {/* Downgrade Confirmation Dialog */}
+      <AlertDialog open={showDowngradeDialog} onOpenChange={setShowDowngradeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Downgrade</AlertDialogTitle>
+            <AlertDialogDescription>
+              {downgradeDialogContent && (
+                <>
+                  This will schedule a downgrade from <strong>{downgradeDialogContent.currentPlan}</strong> to <strong>{downgradeDialogContent.newPlan}</strong>.
+                  <br /><br />
+                  You will be switched to {downgradeDialogContent.newPlan} on {downgradeDialogContent.endDate}.
+                  <br /><br />
+                  You will continue to have access to {downgradeDialogContent.currentPlan} features until then.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowDowngradeDialog(false)
+              setPendingPlan(null)
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              setShowDowngradeDialog(false)
+              if (pendingPlan) {
+                await proceedWithSubscription(pendingPlan)
+                setPendingPlan(null)
+              }
+            }}>
+              Confirm Downgrade
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     <div className={`grid grid-cols-1 ${compact ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-6`}>
       {sortedPlans.map((plan) => {
         const isCurrentPlan = currentPlanId === plan.id
@@ -187,31 +333,31 @@ export function PlanSelector({
         const price = parseFloat(plan.price)
         const isFree = price === 0
         const isPopular = plan.name === 'Starter' || plan.name === 'Basic' // Adjust based on your plans
+        const isScheduledDowngradeTarget = currentSubscription?.status === 'canceling' && 
+          currentSubscription?.downgrade_to_plan?.id === plan.id
+        const isDowngradeOption = currentSubscription && 
+          currentSubscription.plan && 
+          price < parseFloat(currentSubscription.plan.price)
 
         return (
           <div
             key={plan.id}
-            className={`relative bg-background rounded-xl border ${
-              isPopular ? 'border-primary shadow-lg shadow-primary/10' : 'border-border'
-            } p-6 flex flex-col transition-all duration-300 hover:shadow-md ${
-              isCurrentPlan ? 'ring-2 ring-primary' : ''
+            className={`relative bg-card rounded-2xl border ${
+              isPopular ? 'border-primary/50 shadow-xl shadow-primary/10' : 'border-border/60'
+            } p-6 flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
+              isCurrentPlan ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
             }`}
           >
-            {isPopular && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full shadow-sm">
-                Most Popular
-              </div>
-            )}
+            {/* Badges */}
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+              {isPopular && (
+                <div className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-full shadow-sm">
+                  Most Popular
+                </div>
+              )}
+            </div>
 
-            {isCurrentPlan && showCurrentPlan && (
-              <div className="absolute -top-3 right-4">
-                <Badge variant="default" className="text-xs">
-                  Current Plan
-                </Badge>
-              </div>
-            )}
-
-            <div className="mb-6">
+            <div className={`mb-6 ${isPopular ? 'pt-2' : ''}`}>
               <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-bold">
@@ -236,7 +382,7 @@ export function PlanSelector({
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Check className="size-4 text-green-500 shrink-0" />
-                <span>{plan.max_urls} post analysis per day</span>
+                <span>{plan.max_urls} posts per day</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Check className="size-4 text-green-500 shrink-0" />
@@ -264,7 +410,7 @@ export function PlanSelector({
               variant={isPopular ? "default" : "outline"}
               className={`w-full ${isPopular ? "bg-primary hover:bg-primary/90" : ""}`}
               onClick={() => handleSubscribe(plan)}
-              disabled={isSubscribing || isCurrentPlan}
+              disabled={isSubscribing || isCurrentPlan || isScheduledDowngradeTarget}
             >
               {isSubscribing ? (
                 <>
@@ -273,8 +419,12 @@ export function PlanSelector({
                 </>
               ) : isCurrentPlan ? (
                 'Current Plan'
+              ) : isScheduledDowngradeTarget ? (
+                'Downgrading To'
               ) : isFree ? (
                 'Get Started Free'
+              ) : isDowngradeOption ? (
+                `Downgrade to ${plan.name}`
               ) : (
                 `Subscribe to ${plan.name}`
               )}
@@ -283,6 +433,7 @@ export function PlanSelector({
         )
       })}
     </div>
+    </>
   )
 }
 

@@ -694,20 +694,14 @@ def chat_session_messages_stream(request, session_id):
         )
         
         if not can_proceed:
-            def error_stream():
-                import json
-                limit_value = limit_info.get('limit', 0)
-                error_data = {
+            limit_value = limit_info.get('limit', 0)
+            return Response(
+                {
                     'error': 'Usage limit reached',
                     'message': f'You have reached your daily limit of {limit_value} questions. Please upgrade your plan or try again tomorrow.',
-                    'limit_info': limit_info,
-                    'type': 'error'
-                }
-                yield f"data: {json.dumps(error_data)}\n\n"
-            
-            return StreamingHttpResponse(
-                error_stream(),
-                content_type='text/event-stream'
+                    'limit_info': limit_info
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS
             )
         
         # Create generator for streaming response
@@ -719,6 +713,25 @@ def chat_session_messages_stream(request, session_id):
                     user_id=str(request.user.id)
                 ):
                     yield chunk
+            except ValueError as e:
+                # Handle limit check failures from stream_chat_message (race condition catch)
+                if "Usage limit reached" in str(e):
+                    import json
+                    logger.warning(f"⚠️ [Chat] Usage limit reached in stream (race condition) for user {request.user.id}")
+                    can_proceed, limit_info = check_usage_limit(
+                        request.user,
+                        'instagram',
+                        'questions_asked'
+                    )
+                    error_data = {
+                        'error': 'Usage limit reached',
+                        'message': str(e),
+                        'limit_info': limit_info,
+                        'type': 'error'
+                    }
+                    yield f"data: {json.dumps(error_data)}\n\n"
+                else:
+                    raise
             except Exception as e:
                 import json
                 logger.exception(
@@ -739,19 +752,33 @@ def chat_session_messages_stream(request, session_id):
         logger.info(f"✅ [chat_session_messages_stream] Stream started")
         return response
     
+    except ValueError as e:
+        # Handle limit check failures from stream_chat_message (race condition)
+        if "Usage limit reached" in str(e):
+            logger.warning(f"⚠️ [Chat] Usage limit reached in stream setup for user {request.user.id}")
+            can_proceed, limit_info = check_usage_limit(
+                request.user,
+                'instagram',
+                'questions_asked'
+            )
+            return Response(
+                {
+                    'error': 'Usage limit reached',
+                    'message': str(e),
+                    'limit_info': limit_info
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        raise
     except Exception as e:
         logger.exception(
             f"❌ [Chat] Stream setup error for chat_session_id={session_id}, user_id={request.user.id}: {e}",
             extra={'chat_session_id': str(session_id), 'user_id': str(request.user.id)}
         )
         
-        def error_stream():
-            import json
-            yield f"data: {json.dumps({'error': str(e), 'type': 'error'})}\n\n"
-        
-        return StreamingHttpResponse(
-            error_stream(),
-            content_type='text/event-stream'
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
@@ -1663,20 +1690,14 @@ def chat_session_messages_stream(request, session_id):
         )
         
         if not can_proceed:
-            def error_stream():
-                import json
-                limit_value = limit_info.get('limit', 0)
-                error_data = {
+            limit_value = limit_info.get('limit', 0)
+            return Response(
+                {
                     'error': 'Usage limit reached',
                     'message': f'You have reached your daily limit of {limit_value} questions. Please upgrade your plan or try again tomorrow.',
-                    'limit_info': limit_info,
-                    'type': 'error'
-                }
-                yield f"data: {json.dumps(error_data)}\n\n"
-            
-            return StreamingHttpResponse(
-                error_stream(),
-                content_type='text/event-stream'
+                    'limit_info': limit_info
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS
             )
         
         # Create generator for streaming response
@@ -1688,6 +1709,25 @@ def chat_session_messages_stream(request, session_id):
                     user_id=str(request.user.id)
                 ):
                     yield chunk
+            except ValueError as e:
+                # Handle limit check failures from stream_chat_message (race condition catch)
+                if "Usage limit reached" in str(e):
+                    import json
+                    logger.warning(f"⚠️ [Chat] Usage limit reached in stream (race condition) for user {request.user.id}")
+                    can_proceed, limit_info = check_usage_limit(
+                        request.user,
+                        'instagram',
+                        'questions_asked'
+                    )
+                    error_data = {
+                        'error': 'Usage limit reached',
+                        'message': str(e),
+                        'limit_info': limit_info,
+                        'type': 'error'
+                    }
+                    yield f"data: {json.dumps(error_data)}\n\n"
+                else:
+                    raise
             except Exception as e:
                 import json
                 logger.exception(
@@ -1708,19 +1748,33 @@ def chat_session_messages_stream(request, session_id):
         logger.info(f"✅ [chat_session_messages_stream] Stream started")
         return response
     
+    except ValueError as e:
+        # Handle limit check failures from stream_chat_message (race condition)
+        if "Usage limit reached" in str(e):
+            logger.warning(f"⚠️ [Chat] Usage limit reached in stream setup for user {request.user.id}")
+            can_proceed, limit_info = check_usage_limit(
+                request.user,
+                'instagram',
+                'questions_asked'
+            )
+            return Response(
+                {
+                    'error': 'Usage limit reached',
+                    'message': str(e),
+                    'limit_info': limit_info
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+        raise
     except Exception as e:
         logger.exception(
             f"❌ [Chat] Stream setup error for chat_session_id={session_id}, user_id={request.user.id}: {e}",
             extra={'chat_session_id': str(session_id), 'user_id': str(request.user.id)}
         )
         
-        def error_stream():
-            import json
-            yield f"data: {json.dumps({'error': str(e), 'type': 'error'})}\n\n"
-        
-        return StreamingHttpResponse(
-            error_stream(),
-            content_type='text/event-stream'
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 

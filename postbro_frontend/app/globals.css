@@ -11,12 +11,12 @@
 }
 
 :root {
-  /* <CHANGE> Updated to PostBro color palette - much softer, warmer light mode colors */
-  --background: oklch(0.96 0.005 50); /* Warm off-white with subtle beige tint */
+  /* <CHANGE> Updated to PostBro color palette - refined light mode for better contrast */
+  --background: oklch(0.985 0.004 70); /* Clean off-white with subtle warmth */
   --foreground: oklch(0.175 0.011 256.85); /* #0F172A - Slate-900 */
-  --card: oklch(0.97 0.006 50); /* Warmer gray surface with beige tint */
+  --card: oklch(1 0 0); /* Pure white cards for contrast against bg */
   --card-foreground: oklch(0.175 0.011 256.85);
-  --popover: oklch(0.975 0.005 50); /* Warm off-white */
+  --popover: oklch(1 0 0); /* Pure white popovers */
   --popover-foreground: oklch(0.175 0.011 256.85);
 
   /* Primary: Blue-600 (#2563EB) */
@@ -27,10 +27,10 @@
   --secondary: oklch(0.565 0.204 276.8);
   --secondary-foreground: oklch(1 0 0);
 
-  --muted: oklch(0.94 0.006 50); /* Warmer, softer gray with beige */
-  --muted-foreground: oklch(0.545 0.013 256.85); /* Slate-500 */
+  --muted: oklch(0.96 0.004 70); /* Subtle muted background */
+  --muted-foreground: oklch(0.50 0.013 256.85); /* Darker for better readability */
 
-  --accent: oklch(0.94 0.006 50); /* Warmer accent */
+  --accent: oklch(0.96 0.004 70); /* Match muted */
   --accent-foreground: oklch(0.175 0.011 256.85);
 
   /* Success: Green-500 (#10B981) */
@@ -45,8 +45,8 @@
   --destructive: oklch(0.628 0.257 27.33);
   --destructive-foreground: oklch(1 0 0);
 
-  --border: oklch(0.90 0.005 50); /* Warmer, softer border */
-  --input: oklch(0.97 0.005 50); /* Warmer input background */
+  --border: oklch(0.88 0.008 70); /* More visible border - key fix */
+  --input: oklch(0.98 0.003 70); /* Slightly off-white for inputs */
   --ring: oklch(0.532 0.195 254.62); /* Primary blue */
 
   --chart-1: oklch(0.646 0.222 41.116);
@@ -55,13 +55,13 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
+  --sidebar: oklch(0.995 0 0); /* Slightly off-white sidebar */
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent: oklch(0.96 0.004 70);
   --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-border: oklch(0.90 0.008 70); /* More visible sidebar border */
   --sidebar-ring: oklch(0.708 0 0);
 }
 
@@ -193,6 +193,56 @@
     background: linear-gradient(135deg, oklch(0.702 0.156 166.14) 0%, oklch(0.627 0.141 166.42) 100%);
   }
 
+  /* <CHANGE> Enhanced card styling for light mode - subtle shadows and depth */
+  [data-slot="card"] {
+    box-shadow: 
+      0 1px 2px rgba(0, 0, 0, 0.03),
+      0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .dark [data-slot="card"] {
+    box-shadow: 
+      0 1px 3px rgba(0, 0, 0, 0.2),
+      0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* <CHANGE> Card hover enhancement - subtle lift effect */
+  [data-slot="card"]:hover {
+    box-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.04),
+      0 4px 16px rgba(0, 0, 0, 0.06);
+  }
+
+  .dark [data-slot="card"]:hover {
+    box-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.25),
+      0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  /* <CHANGE> Enhanced input styling for light mode - better visibility */
+  [data-slot="input"] {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  [data-slot="input"]:focus {
+    box-shadow: 0 0 0 3px oklch(0.532 0.195 254.62 / 0.12);
+  }
+
+  .dark [data-slot="input"]:focus {
+    box-shadow: 0 0 0 3px oklch(0.605 0.205 254.92 / 0.2);
+  }
+
+  /* <CHANGE> Enhanced button transitions */
+  [data-slot="button"] {
+    transition: all 0.2s ease;
+  }
+
+  [data-slot="button"]:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
   /* Hide scrollbar but keep functionality */
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -206,7 +256,7 @@
   /* Visible scrollbar for sidebar */
   .scrollbar-visible {
     scrollbar-width: thin;
-    scrollbar-color: oklch(0.90 0.005 50) transparent;
+    scrollbar-color: oklch(0.88 0.008 70) transparent;
   }
   
   .scrollbar-visible::-webkit-scrollbar {
@@ -218,12 +268,12 @@
   }
   
   .scrollbar-visible::-webkit-scrollbar-thumb {
-    background-color: oklch(0.90 0.005 50);
+    background-color: oklch(0.88 0.008 70);
     border-radius: 4px;
   }
   
   .scrollbar-visible::-webkit-scrollbar-thumb:hover {
-    background-color: oklch(0.80 0.005 50);
+    background-color: oklch(0.78 0.008 70);
   }
 
   .dark .scrollbar-visible {
@@ -236,5 +286,54 @@
   
   .dark .scrollbar-visible::-webkit-scrollbar-thumb:hover {
     background-color: oklch(0.40 0.019 255.79);
+  }
+
+  /* <CHANGE> Premium subtle background patterns */
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, oklch(0.88 0.008 70 / 0.3) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(0.88 0.008 70 / 0.3) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .dark .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, oklch(0.329 0.019 255.79 / 0.2) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(0.329 0.019 255.79 / 0.2) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* <CHANGE> Subtle gradient overlay for premium feel */
+  .bg-gradient-subtle {
+    background: linear-gradient(
+      135deg,
+      oklch(0.532 0.195 254.62 / 0.03) 0%,
+      oklch(0.565 0.204 276.8 / 0.02) 50%,
+      transparent 100%
+    );
+  }
+
+  .dark .bg-gradient-subtle {
+    background: linear-gradient(
+      135deg,
+      oklch(0.605 0.205 254.92 / 0.05) 0%,
+      oklch(0.598 0.227 293.32 / 0.03) 50%,
+      transparent 100%
+    );
+  }
+
+  /* <CHANGE> Elevated utility class for cards that need more depth */
+  .elevated {
+    box-shadow: 
+      0 1px 3px rgba(0, 0, 0, 0.05),
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      0 10px 30px rgba(0, 0, 0, 0.06);
+  }
+
+  .dark .elevated {
+    box-shadow: 
+      0 1px 3px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.25),
+      0 16px 40px rgba(0, 0, 0, 0.2);
   }
 }

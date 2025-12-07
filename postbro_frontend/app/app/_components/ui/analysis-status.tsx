@@ -1,5 +1,5 @@
 import { type AnalysisRequest, type Post } from "@/lib/api"
-import { Loader2, XCircle } from "lucide-react"
+import { Loader2, AlertCircle, Sparkles } from "lucide-react"
 import { PostCard } from "@/components/app/post-card"
 import { ChatMessages } from "@/components/app/chat-messages"
 import { sanitizeErrorMessage } from "../utils/error-utils"
@@ -94,46 +94,48 @@ export function AnalysisStatus({
 
       {/* PostBro status card - Show during processing */}
       {latestStatus && latestStatus.stage !== 'analysis_complete' && !latestStatus.is_error && (
-        <div className="flex gap-4 mt-8">
-          <div className="flex-shrink-0">
-            <div className="size-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-              <span className="text-white text-sm font-bold">PB</span>
+        <div className="flex gap-3 md:gap-4 mt-6">
+          <div className="flex-shrink-0 mt-0.5">
+            <div className="size-7 md:size-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center ring-2 ring-background">
+              <Sparkles className="size-3.5 md:size-4 text-white" />
             </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="bg-card/60 backdrop-blur-sm rounded-2xl rounded-tl-sm p-4 border border-border/30">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />
-                <p className="text-sm text-foreground flex-1">
-                  {latestStatus.message}
-                  <span className="inline-block ml-1 animate-pulse">...</span>
-                </p>
-                {latestStatus.progress_percentage > 0 && (
-                  <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
-                    {latestStatus.progress_percentage}%
-                  </span>
-                )}
-              </div>
+          <div className="flex-1 min-w-0 pt-0.5">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary flex-shrink-0" />
+              <p className="text-sm text-foreground/90 flex-1">
+                {latestStatus.message}
+              </p>
+              {latestStatus.progress_percentage > 0 && (
+                <span className="text-xs text-muted-foreground ml-2 flex-shrink-0 tabular-nums">
+                  {latestStatus.progress_percentage}%
+                </span>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Error status card */}
+      {/* Error status card - Modern, subtle styling */}
       {latestStatus?.is_error && (
-        <div className="flex gap-4 mt-8">
-          <div className="flex-shrink-0">
-            <div className="size-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-              <span className="text-white text-sm font-bold">PB</span>
+        <div className="flex gap-3 md:gap-4 mt-6">
+          <div className="flex-shrink-0 mt-0.5">
+            <div className="size-7 md:size-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center ring-2 ring-background">
+              <Sparkles className="size-3.5 md:size-4 text-white" />
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="bg-destructive/5 border border-destructive/50 rounded-2xl rounded-tl-sm p-4">
-              <div className="flex items-center gap-2">
-                <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
-                <p className="text-sm text-destructive flex-1">
-                  {latestStatus.actionable_message || sanitizeErrorMessage(latestStatus.message)}
-                </p>
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 rounded-xl p-3.5">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-0.5">
+                    Something went wrong
+                  </p>
+                  <p className="text-sm text-amber-800/80 dark:text-amber-300/80">
+                    {latestStatus.actionable_message || sanitizeErrorMessage(latestStatus.message)}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

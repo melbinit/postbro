@@ -5,6 +5,7 @@ import { ChatMessage as ChatMessageType } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { MarkdownRenderer } from "./markdown-renderer"
 import { StreamingMarkdown } from "./streaming-markdown"
+import { Sparkles } from "lucide-react"
 
 interface ChatMessageProps {
   message: ChatMessageType
@@ -15,41 +16,39 @@ export const ChatMessage = memo(function ChatMessage({ message, streaming = fals
   const isUser = message.role === 'user'
   
   return (
-    <div className="flex gap-3 md:gap-4 w-full group">
-      {/* Avatar - only for AI messages, matching PostBro style */}
-      {!isUser && (
-        <div className="flex-shrink-0">
-          <div className="size-7 md:size-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-sm">
-            <span className="text-white text-xs md:text-sm font-bold">PB</span>
+    <div className={cn(
+      "w-full group",
+      isUser ? "flex justify-end" : ""
+    )}>
+      {isUser ? (
+        // User message - bubble style aligned right
+        <div className="max-w-[85%] md:max-w-[75%]">
+          <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2.5 md:px-5 md:py-3">
+            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{message.content}</p>
+          </div>
+        </div>
+      ) : (
+        // AI message - clean, no background, properly spaced
+        <div className="flex gap-3 md:gap-4">
+          {/* Avatar */}
+          <div className="flex-shrink-0 mt-0.5">
+            <div className="size-7 md:size-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center ring-2 ring-background">
+              <Sparkles className="size-3.5 md:size-4 text-white" />
+            </div>
+          </div>
+          
+          {/* Content - no background, clean typography */}
+          <div className="flex-1 min-w-0 pt-0.5">
+            <div className="text-[15px] leading-relaxed text-foreground prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-code:text-foreground">
+              {streaming ? (
+                <StreamingMarkdown content={message.content} speed={25} />
+              ) : (
+                <MarkdownRenderer content={message.content} />
+              )}
+            </div>
           </div>
         </div>
       )}
-      
-      {/* Message content */}
-      <div className={cn(
-        "flex-1 min-w-0",
-        isUser && "ml-7 md:ml-12" // Indent user messages to align with AI messages (responsive)
-      )}>
-        <div
-          className={cn(
-            "rounded-2xl px-4 py-3 md:px-5 md:py-3.5 text-base leading-relaxed shadow-sm transition-shadow",
-            isUser
-              ? "bg-primary/10 border border-primary/20 rounded-tr-sm hover:shadow-md"
-              : "bg-card/80 dark:bg-transparent backdrop-blur-sm border border-border/40 dark:border-transparent rounded-tl-sm shadow-sm dark:shadow-none hover:shadow-md dark:hover:shadow-none"
-          )}
-        >
-          {isUser ? (
-            // User messages: plain text (no markdown)
-            <p className="whitespace-pre-wrap break-words text-foreground">{message.content}</p>
-          ) : streaming ? (
-            // AI messages: streaming with character-by-character animation
-            <StreamingMarkdown content={message.content} speed={25} />
-          ) : (
-            // AI messages: static markdown rendering
-            <MarkdownRenderer content={message.content} />
-          )}
-        </div>
-      </div>
     </div>
   )
 })

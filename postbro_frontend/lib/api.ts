@@ -72,9 +72,10 @@ export interface Plan {
 export interface Subscription {
   id: string
   plan: Plan
-  status: 'active' | 'trial' | 'cancelled' | 'expired'
+  status: 'active' | 'trial' | 'pending' | 'failed' | 'canceling' | 'cancelled' | 'expired'
   start_date: string
   end_date: string | null
+  downgrade_to_plan?: Plan
   created_at?: string
   updated_at?: string
 }
@@ -86,6 +87,7 @@ export interface UsageStats {
     max_handles: number
     max_urls: number
     max_analyses_per_day: number
+    max_questions_per_day: number
   }
   usage: {
     platform?: string
@@ -105,11 +107,17 @@ export interface UsageStats {
       limit: number
       remaining: number
     }
+    questions_asked?: {
+      used: number
+      limit: number
+      remaining: number
+    }
     platforms?: {
       [platform: string]: {
         handle_analyses: number
         url_lookups: number
         post_suggestions: number
+        questions_asked: number
       }
     }
   }
@@ -399,8 +407,13 @@ export const plansApi = {
     return apiRequest<{ plans: Plan[] }>('/accounts/plans/')
   },
 
-  getCurrentSubscription: async (): Promise<Subscription> => {
-    return apiRequest<Subscription>('/accounts/subscription/')
+  getCurrentSubscription: async (): Promise<Subscription | null> => {
+    const response = await apiRequest<{ subscription: Subscription | null } | Subscription>('/accounts/subscription/')
+    // Backend returns { subscription: null } when no subscription, or Subscription directly when exists
+    if (response && 'subscription' in response) {
+      return response.subscription
+    }
+    return response as Subscription
   },
 
   subscribeToPlan: async (planId: string, token?: string | null): Promise<{ 
@@ -410,6 +423,10 @@ export const plansApi = {
     checkout_id?: string
     subscription_id?: string
     plan?: string
+    downgrade?: boolean
+    scheduled_at?: string
+    current_plan?: string
+    downgrade_to_plan?: string
   }> => {
     return apiRequest<{ 
       message: string
@@ -418,6 +435,10 @@ export const plansApi = {
       checkout_id?: string
       subscription_id?: string
       plan?: string
+      downgrade?: boolean
+      scheduled_at?: string
+      current_plan?: string
+      downgrade_to_plan?: string
     }>('/billing/subscribe/', {
       method: 'POST',
       body: JSON.stringify({ plan_id: planId }),
@@ -457,6 +478,7 @@ export const usageApi = {
       handle_analyses: number
       url_lookups: number
       post_suggestions: number
+      questions_asked: number
       created_at: string
       updated_at: string
     }>
@@ -479,6 +501,23 @@ export const billingApi = {
     count: number
   }> => {
     return apiRequest('/billing/subscription/history/')
+  },
+
+  checkSubscriptionSuccess: async (
+    params: { checkoutId?: string; subscriptionId?: string },
+    token?: string | null
+  ): Promise<{
+    success: boolean
+    pending?: boolean
+    failed?: boolean
+    message: string
+    subscription?: Subscription
+  }> => {
+    const queryParams = new URLSearchParams()
+    if (params.checkoutId) queryParams.append('checkout_id', params.checkoutId)
+    if (params.subscriptionId) queryParams.append('subscription_id', params.subscriptionId)
+    
+    return apiRequest(`/billing/subscription/success/?${queryParams.toString()}`, { token })
   },
 }
 
@@ -749,9 +788,19 @@ export const chatApi = {
     console.log('📥 [streamMessage] Response status:', response.status, response.statusText)
 
     if (!response.ok) {
-      const error = await response.text()
-      onError?.(error)
-      throw new Error(`Stream failed: ${response.status} ${error}`)
+      const errorText = await response.text()
+      let errorMessage = errorText
+      
+      // Try to parse JSON error response
+      try {
+        const errorJson = JSON.parse(errorText)
+        errorMessage = errorJson.message || errorJson.error || errorText
+      } catch {
+        // Not JSON, use as-is
+      }
+      
+      onError?.(errorMessage)
+      throw new Error(`Stream failed: ${response.status} ${errorMessage}`)
     }
 
     if (!response.body) {

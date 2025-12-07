@@ -93,33 +93,44 @@ const useCases = [
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="pt-16 pb-24 md:py-24 bg-muted/30">
-      <div className="container px-4 mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Analyze Viral Posts, Get <span className="text-primary">Similar Content Ideas</span>
-          </h2>
-          <p className="text-muted-foreground text-xl">
-            Paste any post URL and get AI-powered insights plus similar post ideas with captions and recommendations. Works with your posts or any viral content.
-          </p>
+    <section id="features" className="py-14 sm:py-20 md:py-28 relative">
+      {/* Subtle background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-muted/40 via-muted/20 to-transparent pointer-events-none" />
+      
+      <div className="container px-4 mx-auto relative">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
+          <FadeInUp>
+            <p className="text-[10px] sm:text-xs font-semibold text-primary uppercase tracking-wider mb-3 sm:mb-4">Features</p>
+          </FadeInUp>
+          <FadeInUp delay={0.1}>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-5 px-2 sm:px-0">
+              Analyze Viral Posts, Get{" "}
+              <span className="text-primary">Content Ideas</span>
+            </h2>
+          </FadeInUp>
+          <FadeInUp delay={0.2}>
+            <p className="text-muted-foreground text-base sm:text-lg leading-relaxed px-2 sm:px-0">
+              Paste any post URL and get AI-powered insights plus content ideas with captions.
+            </p>
+          </FadeInUp>
         </div>
 
-        {/* Core Features */}
-        <div className="mb-16">
-          <h3 className="text-2xl font-bold mb-8 text-center">What PostBro Does</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Core Features - Bento-style grid */}
+        <div className="mb-14 sm:mb-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
             {features.map((feature, index) => (
               <FadeInUp key={index} delay={index * 0.1} duration={0.7}>
-                <div
-                  className="group p-6 bg-background rounded-2xl border border-border shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1"
-                >
-                <div
-                  className={`size-12 rounded-xl bg-background border border-border flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm ${feature.color}`}
-                >
-                  <feature.icon className="size-6" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed text-base">{feature.description}</p>
+                <div className="group relative p-5 sm:p-6 md:p-8 bg-card rounded-xl sm:rounded-2xl border border-border/50 hover:border-border transition-all duration-300">
+                  {/* Subtle gradient on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl sm:rounded-2xl" />
+                  
+                  <div className="relative">
+                    <div className={`size-10 sm:size-11 rounded-lg sm:rounded-xl flex items-center justify-center mb-4 sm:mb-5 ${feature.color} bg-current/10`}>
+                      <feature.icon className="size-4 sm:size-5" />
+                    </div>
+                    <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">{feature.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed text-sm sm:text-[15px]">{feature.description}</p>
+                  </div>
                 </div>
               </FadeInUp>
             ))}
@@ -128,20 +139,22 @@ export function FeaturesSection() {
 
         {/* Use Cases */}
         <div>
-          <h3 className="text-2xl font-bold mb-8 text-center">Who It's For</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <FadeInUp>
+            <p className="text-[10px] sm:text-xs font-semibold text-primary uppercase tracking-wider mb-3 sm:mb-4 text-center">Who It's For</p>
+          </FadeInUp>
+          <FadeInUp delay={0.1}>
+            <h3 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-10 text-center">Built for creators and marketers</h3>
+          </FadeInUp>
+          
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {useCases.map((useCase, index) => (
-              <FadeInUp key={index} delay={index * 0.1} duration={0.7}>
-                <div
-                  className="group p-6 bg-background rounded-2xl border border-border shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 text-center"
-                >
-                <div
-                  className={`size-12 rounded-xl bg-background border border-border flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm mx-auto ${useCase.color}`}
-                >
-                  <useCase.icon className="size-6" />
-                </div>
-                <h3 className="text-lg font-semibold mb-3">{useCase.title}</h3>
-                <p className="text-muted-foreground leading-relaxed text-base">{useCase.description}</p>
+              <FadeInUp key={index} delay={index * 0.08} duration={0.6}>
+                <div className="group relative p-4 sm:p-5 bg-card rounded-lg sm:rounded-xl border border-border/50 hover:border-border transition-all duration-300 text-center h-full">
+                  <div className={`size-8 sm:size-10 rounded-lg flex items-center justify-center mb-3 sm:mb-4 mx-auto ${useCase.color} bg-current/10`}>
+                    <useCase.icon className="size-4 sm:size-5" />
+                  </div>
+                  <h4 className="text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">{useCase.title}</h4>
+                  <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed line-clamp-4 sm:line-clamp-none">{useCase.description}</p>
                 </div>
               </FadeInUp>
             ))}

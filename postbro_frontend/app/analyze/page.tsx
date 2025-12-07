@@ -96,15 +96,15 @@ export default function AnalyzePage() {
   }
 
   const getStatusIcon = (stage: string, isError: boolean) => {
-    if (isError) return <XCircle className="h-4 w-4 text-destructive" />
-    if (stage === "analysis_complete") return <CheckCircle2 className="h-4 w-4 text-green-500" />
+    if (isError) return <AlertCircle className="h-4 w-4 text-amber-500" />
+    if (stage === "analysis_complete") return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
     return <Loader2 className="h-4 w-4 animate-spin text-primary" />
   }
 
   const getStatusColor = (stage: string, isError: boolean) => {
-    if (isError) return "text-destructive"
-    if (stage === "analysis_complete") return "text-green-500"
-    return "text-primary"
+    if (isError) return "text-amber-700 dark:text-amber-400"
+    if (stage === "analysis_complete") return "text-emerald-600 dark:text-emerald-400"
+    return "text-foreground"
   }
 
   return (
@@ -235,17 +235,19 @@ export default function AnalyzePage() {
                       statusHistory.map((status) => (
                         <div
                           key={status.id}
-                          className={`flex items-start gap-3 p-3 rounded-lg border ${
+                          className={`flex items-start gap-3 p-3.5 rounded-xl border transition-colors ${
                             status.is_error
-                              ? "border-destructive/50 bg-destructive/5"
-                              : "border-border bg-background"
+                              ? "border-amber-200/60 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20"
+                              : status.stage === "analysis_complete"
+                              ? "border-emerald-200/60 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/20"
+                              : "border-border/50 bg-muted/30"
                           }`}
                         >
                           <div className="mt-0.5">
                             {getStatusIcon(status.stage, status.is_error)}
                           </div>
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center justify-between">
+                          <div className="flex-1 space-y-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
                               <p
                                 className={`text-sm font-medium ${getStatusColor(
                                   status.stage,
@@ -255,17 +257,17 @@ export default function AnalyzePage() {
                                 {status.message}
                               </p>
                               {status.progress_percentage > 0 && (
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0">
                                   {status.progress_percentage}%
                                 </span>
                               )}
                             </div>
                             {status.actionable_message && (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-xs text-muted-foreground/80">
                                 {status.actionable_message}
                               </p>
                             )}
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-[10px] text-muted-foreground/60">
                               {new Date(status.created_at).toLocaleTimeString()}
                             </p>
                           </div>
@@ -275,7 +277,7 @@ export default function AnalyzePage() {
                   </div>
 
                   {latestStatus?.stage === "analysis_complete" && (
-                    <Alert>
+                    <Alert variant="success">
                       <CheckCircle2 className="h-4 w-4" />
                       <AlertDescription>
                         Analysis complete! Results are ready to view.

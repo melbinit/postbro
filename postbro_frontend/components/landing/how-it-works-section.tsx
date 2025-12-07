@@ -34,34 +34,44 @@ function FadeInUp({
 
 export function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="py-24 relative overflow-hidden">
+    <section id="how-it-works" className="py-14 sm:py-20 md:py-28 relative overflow-hidden">
       <div className="container px-4 mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-20">
-          <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-            Simple Process
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            From Post to Insights in <span className="text-primary">Seconds</span>
-          </h2>
-          <p className="text-muted-foreground text-xl">
-            You saw a post go viral and want to know why. Simply copy the link and let PostBro do the work. We'll analyze why it went viral, read the comments to understand what people are saying, explain why people are liking it, and give you similar content ideas.
-          </p>
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
+          <FadeInUp>
+            <p className="text-[10px] sm:text-xs font-semibold text-primary uppercase tracking-wider mb-3 sm:mb-4">How It Works</p>
+          </FadeInUp>
+          <FadeInUp delay={0.1}>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-5 px-2 sm:px-0">
+              From Post to Insights in <span className="text-primary">Seconds</span>
+            </h2>
+          </FadeInUp>
+          <FadeInUp delay={0.2}>
+            <p className="text-muted-foreground text-base sm:text-lg leading-relaxed px-2 sm:px-0">
+              Copy a viral post link, paste it in PostBro, and get instant AI analysis.
+            </p>
+          </FadeInUp>
         </div>
 
-        <div className="relative">
-          {/* Connecting Line */}
-          <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-border to-transparent -translate-y-1/2" />
+        <div className="relative max-w-4xl mx-auto">
+          {/* Connecting Line - Desktop */}
+          <div className="hidden md:block absolute top-[52px] left-[16.67%] right-[16.67%] h-px">
+            <div className="w-full h-full bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20" />
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 md:gap-6 relative">
             {/* Step 1 */}
             <FadeInUp delay={0.1} duration={0.8}>
               <div className="relative flex flex-col items-center text-center group">
-                <div className="size-16 rounded-2xl bg-background border-2 border-primary/20 flex items-center justify-center mb-6 shadow-lg z-10 group-hover:border-primary transition-colors">
-                  <span className="text-2xl font-bold text-primary">1</span>
+                <div className="relative mb-4 sm:mb-6">
+                  <div className="size-20 sm:size-[104px] rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                    <div className="size-10 sm:size-14 rounded-lg sm:rounded-xl bg-card border border-border/50 flex items-center justify-center shadow-sm">
+                      <span className="text-lg sm:text-xl font-bold text-primary">1</span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-3">Copy the Link</h3>
-                <p className="text-muted-foreground text-base">
-                  You see a post that's getting tons of engagement. Copy the Instagram, X, or YouTube post URL and paste it into PostBro. That's it - no sign-ins or account connections needed.
+                <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">Copy the Link</h3>
+                <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed max-w-[280px] mx-auto">
+                  See a viral post? Copy the Instagram, X, or YouTube URL. No sign-ins needed.
                 </p>
               </div>
             </FadeInUp>
@@ -69,12 +79,16 @@ export function HowItWorksSection() {
             {/* Step 2 */}
             <FadeInUp delay={0.2} duration={0.8}>
               <div className="relative flex flex-col items-center text-center group">
-                <div className="size-16 rounded-2xl bg-background border-2 border-primary/20 flex items-center justify-center mb-6 shadow-lg z-10 group-hover:border-primary transition-colors">
-                  <span className="text-2xl font-bold text-primary">2</span>
+                <div className="relative mb-4 sm:mb-6">
+                  <div className="size-20 sm:size-[104px] rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                    <div className="size-10 sm:size-14 rounded-lg sm:rounded-xl bg-card border border-border/50 flex items-center justify-center shadow-sm">
+                      <span className="text-lg sm:text-xl font-bold text-primary">2</span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-3">PostBro Analyzes</h3>
-                <p className="text-muted-foreground text-base">
-                  Our AI reads through comments, analyzes the images and captions, and studies the engagement patterns. It figures out why people are engaging and what made this post go viral.
+                <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">AI Analyzes</h3>
+                <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed max-w-[280px] mx-auto">
+                  Our AI analyzes images, captions, and engagement patterns to understand virality.
                 </p>
               </div>
             </FadeInUp>
@@ -82,12 +96,16 @@ export function HowItWorksSection() {
             {/* Step 3 */}
             <FadeInUp delay={0.3} duration={0.8}>
               <div className="relative flex flex-col items-center text-center group">
-                <div className="size-16 rounded-2xl bg-background border-2 border-primary/20 flex items-center justify-center mb-6 shadow-lg z-10 group-hover:border-primary transition-colors">
-                  <span className="text-2xl font-bold text-primary">3</span>
+                <div className="relative mb-4 sm:mb-6">
+                  <div className="size-20 sm:size-[104px] rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                    <div className="size-10 sm:size-14 rounded-lg sm:rounded-xl bg-card border border-border/50 flex items-center justify-center shadow-sm">
+                      <span className="text-lg sm:text-xl font-bold text-primary">3</span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-3">Get Why It Went Viral + Ideas</h3>
-                <p className="text-muted-foreground text-base">
-                  You get a clear explanation of why the post went viral, what people are saying in the comments, and why they're liking it. Plus, we give you similar content ideas with captions and recommendations you can use.
+                <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">Get Insights</h3>
+                <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed max-w-[280px] mx-auto">
+                  Understand why it went viral and get similar content ideas with captions.
                 </p>
               </div>
             </FadeInUp>

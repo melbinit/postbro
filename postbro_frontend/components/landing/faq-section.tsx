@@ -38,31 +38,32 @@ const faqs = [
 
 export function FAQSection() {
   return (
-    <section id="faq" className="py-24 bg-background">
+    <section id="faq" className="py-14 sm:py-20 md:py-28">
       <div className="container px-4 mx-auto">
         <FadeInUp delay={0.1}>
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Frequently Asked <span className="text-primary">Questions</span>
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+            <p className="text-[10px] sm:text-xs font-semibold text-primary uppercase tracking-wider mb-3 sm:mb-4">FAQ</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
+              Frequently Asked Questions
             </h2>
-            <p className="text-muted-foreground text-lg">
-              Everything you need to know about PostBro, payments, and how it works.
+            <p className="text-muted-foreground text-base sm:text-lg">
+              Everything you need to know about PostBro.
             </p>
           </div>
         </FadeInUp>
 
-        <div className="max-w-3xl mx-auto">
-          <Accordion type="single" collapsible className="w-full space-y-4">
+        <div className="max-w-2xl mx-auto">
+          <Accordion type="single" collapsible className="w-full space-y-2 sm:space-y-3">
             {faqs.map((faq, index) => (
-              <FadeInUp key={index} delay={0.1 + index * 0.1} duration={0.6}>
+              <FadeInUp key={index} delay={0.1 + index * 0.08} duration={0.5}>
                 <AccordionItem
                   value={`item-${index}`}
-                  className="border-0 rounded-lg px-6 bg-background/50 hover:bg-background transition-colors"
+                  className="border border-border/50 rounded-lg sm:rounded-xl px-4 sm:px-5 bg-card/50 data-[state=open]:bg-card data-[state=open]:border-border transition-all"
                 >
-                  <AccordionTrigger className="text-left font-semibold hover:no-underline py-6">
+                  <AccordionTrigger className="text-left font-medium hover:no-underline py-4 sm:py-5 text-sm sm:text-[15px]">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground leading-relaxed pb-6">
+                  <AccordionContent className="text-muted-foreground leading-relaxed pb-4 sm:pb-5 text-xs sm:text-sm">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>

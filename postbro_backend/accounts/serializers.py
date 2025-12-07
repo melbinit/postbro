@@ -132,11 +132,14 @@ class PlanSerializer(serializers.ModelSerializer):
 class SubscriptionSerializer(serializers.ModelSerializer):
     plan = PlanSerializer(read_only=True)
     plan_id = serializers.UUIDField(write_only=True, required=False)
+    downgrade_to_plan = PlanSerializer(read_only=True)
     
     class Meta:
         model = Subscription
         fields = ('id', 'plan', 'plan_id', 'status', 'start_date', 
-                 'end_date', 'created_at', 'updated_at')
+                 'end_date', 'downgrade_to_plan', 'payment_provider',
+                 'provider_customer_id', 'provider_subscription_id',
+                 'created_at', 'updated_at')
         read_only_fields = ('id', 'status', 'start_date', 'end_date', 
                           'created_at', 'updated_at')
 
@@ -153,8 +156,8 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     def validate_plan_id(self, value):
         try:
             plan = Plan.objects.get(id=value, is_active=True)
-            if plan.price == 0:
-                raise serializers.ValidationError('Free plan cannot be subscribed to directly.')
+            # Allow free plans - the view handles them by creating subscription directly
+            # No need to block them here as the view logic properly handles both free and paid plans
         except Plan.DoesNotExist:
             raise serializers.ValidationError('Invalid or inactive plan selected.')
         return value 

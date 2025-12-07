@@ -170,7 +170,7 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
   return (
     <div className="w-full max-w-3xl mx-auto">
       {/* Floating card */}
-      <div className="relative border border-border/40 dark:border-border/40 border-primary/20 rounded-2xl bg-card/80 backdrop-blur-md shadow-lg">
+      <div className="relative border border-border/50 dark:border-border/40 rounded-2xl bg-card/90 backdrop-blur-md shadow-lg hover:shadow-xl transition-shadow duration-300">
         {/* Minimize button */}
         <button
           type="button"
@@ -280,9 +280,9 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
                   type="button"
                   onClick={handleSubmit}
                   disabled={isLoading || !url.trim()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg bg-primary hover:bg-primary/90 shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg bg-primary hover:bg-primary/90 shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-xl"
                 >
-                  <Send className="size-4" />
+                  <Send className="size-4 text-primary-foreground" />
                 </button>
               </div>
             </div>

@@ -21,7 +21,7 @@ def collect_social_posts(
     analysis_request: PostAnalysisRequest,
     urls_by_platform: Dict[str, List[str]],
     media_bytes_by_post_id: Dict,
-) -> Tuple[List[Post], List[str], int]:
+) -> Tuple[List[Post], List[str], int, set]:
     """
     Collect posts from social media platforms.
     
@@ -31,12 +31,13 @@ def collect_social_posts(
         media_bytes_by_post_id: Cache for media bytes (passed to PostSaver)
         
     Returns:
-        Tuple of (all_posts, failed_urls, total_api_calls)
+        Tuple of (all_posts, failed_urls, total_api_calls, fast_path_post_ids)
     """
     analysis_request_id_str = str(analysis_request.id)
     all_posts = []
     failed_urls = []
     total_api_calls = 0
+    fast_path_post_ids = set()  # Track fast path posts across ALL platforms
     
     for platform, urls in urls_by_platform.items():
         try:
@@ -49,28 +50,31 @@ def collect_social_posts(
             logger.info(f"📊 [DuplicateCheck] Found {existing_count} existing posts, {new_count} new posts")
             
             if platform == 'instagram':
-                posts, failed, api_calls = _collect_instagram_posts(
+                posts, failed, api_calls, fast_path_ids = _collect_instagram_posts(
                     analysis_request, urls, existing_posts, media_bytes_by_post_id, analysis_request_id_str
                 )
                 all_posts.extend(posts)
                 failed_urls.extend(failed)
                 total_api_calls += api_calls
+                fast_path_post_ids.update(fast_path_ids)
                 
             elif platform == 'youtube':
-                posts, failed, api_calls = _collect_youtube_posts(
+                posts, failed, api_calls, fast_path_ids = _collect_youtube_posts(
                     analysis_request, urls, existing_posts, media_bytes_by_post_id, analysis_request_id_str
                 )
                 all_posts.extend(posts)
                 failed_urls.extend(failed)
                 total_api_calls += api_calls
+                fast_path_post_ids.update(fast_path_ids)
                 
             elif platform == 'x':
-                posts, failed, api_calls = _collect_twitter_posts(
+                posts, failed, api_calls, fast_path_ids = _collect_twitter_posts(
                     analysis_request, urls, existing_posts, media_bytes_by_post_id, analysis_request_id_str
                 )
                 all_posts.extend(posts)
                 failed_urls.extend(failed)
                 total_api_calls += api_calls
+                fast_path_post_ids.update(fast_path_ids)
                 
             else:
                 logger.error(f"Unsupported platform: {platform}")
@@ -84,7 +88,7 @@ def collect_social_posts(
             )
             failed_urls.extend(urls)
     
-    return all_posts, failed_urls, total_api_calls
+    return all_posts, failed_urls, total_api_calls, fast_path_post_ids
 
 
 def _collect_instagram_posts(
@@ -93,7 +97,7 @@ def _collect_instagram_posts(
     existing_posts: Dict[str, Optional[Post]],
     media_bytes_by_post_id: Dict,
     analysis_request_id_str: str,
-) -> Tuple[List[Post], List[str], int]:
+) -> Tuple[List[Post], List[str], int, set]:
     """Collect Instagram posts (fast path + slow path)."""
     scraper = BrightDataScraper()
     saver = PostSaver(analysis_request, media_bytes_cache=media_bytes_by_post_id)
@@ -101,6 +105,7 @@ def _collect_instagram_posts(
     all_posts = []
     failed_urls = []
     api_calls = 0
+    fast_path_post_ids = set()
     
     for url in urls:
         existing_post = existing_posts.get(url)
@@ -118,6 +123,7 @@ def _collect_instagram_posts(
                     
                     if link_post_to_analysis(analysis_request, existing_post, 'instagram'):
                         all_posts.append(existing_post)
+                        fast_path_post_ids.add(existing_post.id)
                         logger.info(f"✅ [FastPath] Successfully updated existing post {existing_post.id}")
                     else:
                         logger.warning(f"⚠️ [FastPath] Post updated but linking failed for {existing_post.id}")
@@ -174,7 +180,7 @@ def _collect_instagram_posts(
                 )
                 failed_urls.append(url)
     
-    return all_posts, failed_urls, api_calls
+    return all_posts, failed_urls, api_calls, fast_path_post_ids
 
 
 def _collect_youtube_posts(
@@ -183,7 +189,7 @@ def _collect_youtube_posts(
     existing_posts: Dict[str, Optional[Post]],
     media_bytes_by_post_id: Dict,
     analysis_request_id_str: str,
-) -> Tuple[List[Post], List[str], int]:
+) -> Tuple[List[Post], List[str], int, set]:
     """Collect YouTube posts (fast path + slow path)."""
     scraper = BrightDataScraper()
     saver = PostSaver(analysis_request, media_bytes_cache=media_bytes_by_post_id)
@@ -191,6 +197,7 @@ def _collect_youtube_posts(
     all_posts = []
     failed_urls = []
     api_calls = 0
+    fast_path_post_ids = set()
     
     for url in urls:
         existing_post = existing_posts.get(url)
@@ -208,6 +215,7 @@ def _collect_youtube_posts(
                     
                     if link_post_to_analysis(analysis_request, existing_post, 'youtube'):
                         all_posts.append(existing_post)
+                        fast_path_post_ids.add(existing_post.id)
                         logger.info(f"✅ [FastPath] Successfully updated existing post {existing_post.id}")
                     else:
                         logger.warning(f"⚠️ [FastPath] Post updated but linking failed for {existing_post.id}")
@@ -267,7 +275,7 @@ def _collect_youtube_posts(
                 )
                 failed_urls.append(url)
     
-    return all_posts, failed_urls, api_calls
+    return all_posts, failed_urls, api_calls, fast_path_post_ids
 
 
 def _collect_twitter_posts(
@@ -276,7 +284,7 @@ def _collect_twitter_posts(
     existing_posts: Dict[str, Optional[Post]],
     media_bytes_by_post_id: Dict,
     analysis_request_id_str: str,
-) -> Tuple[List[Post], List[str], int]:
+) -> Tuple[List[Post], List[str], int, set]:
     """Collect Twitter/X posts (fast path + slow path)."""
     scraper = TwitterAPIScraper()
     saver = PostSaver(analysis_request, media_bytes_cache=media_bytes_by_post_id)
@@ -284,6 +292,7 @@ def _collect_twitter_posts(
     all_posts = []
     failed_urls = []
     api_calls = 0
+    fast_path_post_ids = set()
     
     for url in urls:
         existing_post = existing_posts.get(url)
@@ -301,6 +310,7 @@ def _collect_twitter_posts(
                     
                     if link_post_to_analysis(analysis_request, existing_post, 'x'):
                         all_posts.append(existing_post)
+                        fast_path_post_ids.add(existing_post.id)
                         logger.info(f"✅ [FastPath] Successfully updated existing post {existing_post.id}")
                     else:
                         logger.warning(f"⚠️ [FastPath] Post updated but linking failed for {existing_post.id}")
@@ -354,5 +364,5 @@ def _collect_twitter_posts(
                 )
                 failed_urls.append(url)
     
-    return all_posts, failed_urls, api_calls
+    return all_posts, failed_urls, api_calls, fast_path_post_ids
 

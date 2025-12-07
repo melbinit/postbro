@@ -5,7 +5,7 @@ Handles media extraction, frame conversion, and transcription tracking.
 """
 
 import logging
-from typing import List, Dict
+from typing import List, Dict, Set
 from analysis.models import PostAnalysisRequest
 from social.models import Post, PostMedia
 
@@ -16,24 +16,36 @@ def extract_media_for_analysis(
     analysis_request: PostAnalysisRequest,
     all_posts: List[Post],
     media_bytes_by_post_id: Dict,
+    fast_path_post_ids: Set = None,
 ) -> None:
     """
     Extract media (frames, etc.) for analysis.
-    Currently handles YouTube frame extraction.
+    Skips fast path posts (media already exists and cache already populated).
     
     Args:
         analysis_request: The analysis request
         all_posts: List of posts to extract media for
         media_bytes_by_post_id: Cache dict to store media bytes
+        fast_path_post_ids: Set of post IDs that used fast path (skip extraction)
     """
-    # Extract frames for YouTube videos
+    if fast_path_post_ids is None:
+        fast_path_post_ids = set()
+    
+    # Extract frames for YouTube videos (only for slow path posts)
     if analysis_request.platform == 'youtube' and all_posts:
         from social.services.media_processor import MediaProcessor
         
-        logger.info(f"🎬 Starting frame extraction for {len(all_posts)} YouTube video(s)")
+        # Filter out fast path posts
+        posts_to_process = [p for p in all_posts if p.id not in fast_path_post_ids]
+        
+        if not posts_to_process:
+            logger.info(f"⚡ [FastPath] All posts used fast path, skipping frame extraction")
+            return
+        
+        logger.info(f"🎬 Starting frame extraction for {len(posts_to_process)} YouTube video(s) (skipped {len(all_posts) - len(posts_to_process)} fast path)")
         media_processor = MediaProcessor()
         
-        for post in all_posts:
+        for post in posts_to_process:
             if post.platform.name == 'youtube':
                 video_id = post.platform_post_id
                 try:

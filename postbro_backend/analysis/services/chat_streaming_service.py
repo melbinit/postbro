@@ -122,12 +122,6 @@ def stream_chat_message(session_id: str, user_message: str, user_id: str) -> Gen
         
         logger.info(f"💾 [ChatStream] Saved user message immediately: {user_msg.id}")
         
-        # Increment question usage (questions are tracked per user, platform doesn't matter)
-        # Use the post's platform for consistency
-        platform = post.platform.name.lower() if post.platform else 'instagram'
-        increment_usage(session.user, platform, 'questions_asked')
-        logger.info(f"📊 [ChatStream] Incremented question usage for user {user_id}")
-        
         # Build chat prompt
         system_prompt = get_system_prompt()
         user_prompt = build_chat_prompt(
@@ -142,7 +136,26 @@ def stream_chat_message(session_id: str, user_message: str, user_id: str) -> Gen
         logger.info(f"📝 [ChatStream] Chat history: {chat_history.count()} previous messages")
         
         # ============================================
-        # STEP 2: Start Streaming from Gemini
+        # STEP 2: Check limit AGAIN before calling Gemini (catches race conditions)
+        # ============================================
+        from accounts.utils import check_usage_limit
+        platform = post.platform.name.lower() if post.platform else 'instagram'
+        can_proceed, limit_info = check_usage_limit(
+            session.user,
+            platform,
+            'questions_asked'
+        )
+        
+        if not can_proceed:
+            logger.warning(f"⚠️ [ChatStream] Limit check failed before Gemini call for user {user_id}: {limit_info}")
+            limit_value = limit_info.get('limit', 0)
+            raise ValueError(
+                f"Usage limit reached: You have reached your daily limit of {limit_value} questions. "
+                f"Please upgrade your plan or try again tomorrow."
+            )
+        
+        # ============================================
+        # STEP 3: Start Streaming from Gemini
         # ============================================
         model_name = 'gemini-2.5-flash'
         
@@ -252,6 +265,12 @@ def stream_chat_message(session_id: str, user_message: str, user_id: str) -> Gen
         session.save(update_fields=['updated_at', 'messages_count', 'total_tokens', 'duration_seconds'])
         
         logger.info(f"💾 [ChatStream] Saved assistant message after streaming: {assistant_msg.id}")
+        
+        # Increment usage ONLY after successful response (no errors)
+        # Questions are tracked per user, platform doesn't matter
+        platform = post.platform.name.lower() if post.platform else 'instagram'
+        increment_usage(session.user, platform, 'questions_asked')
+        logger.info(f"📊 [ChatStream] Incremented question usage for user {user_id} after successful response")
         
         # Log API call for analytics (async, non-blocking)
         try:

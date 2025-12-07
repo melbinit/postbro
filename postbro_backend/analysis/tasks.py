@@ -128,7 +128,7 @@ def process_analysis_request(self, analysis_request_id: str):
         
         # Stage 1: Social Media Collection
         try:
-            all_posts, failed_urls, total_api_calls = collect_social_posts(
+            all_posts, failed_urls, total_api_calls, fast_path_post_ids = collect_social_posts(
                 analysis_request,
                 urls_by_platform,
                 media_bytes_by_post_id,
@@ -232,6 +232,7 @@ def process_analysis_request(self, analysis_request_id: str):
                     analysis_request,
                     all_posts,
                     media_bytes_by_post_id,
+                    fast_path_post_ids,
                 )
             except Exception as e:
                 handle_analysis_error(
@@ -497,7 +498,7 @@ def process_analysis_request(self, analysis_request_id: str):
         
         # Stage 1: Social Media Collection
         try:
-            all_posts, failed_urls, total_api_calls = collect_social_posts(
+            all_posts, failed_urls, total_api_calls, fast_path_post_ids = collect_social_posts(
                 analysis_request,
                 urls_by_platform,
                 media_bytes_by_post_id,
@@ -601,6 +602,7 @@ def process_analysis_request(self, analysis_request_id: str):
                     analysis_request,
                     all_posts,
                     media_bytes_by_post_id,
+                    fast_path_post_ids,
                 )
             except Exception as e:
                 handle_analysis_error(

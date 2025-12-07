@@ -10,12 +10,32 @@ from typing import Dict, Optional, Tuple
 def get_user_subscription(user: User) -> Optional[Subscription]:
     """
     Get user's current active subscription
-    Returns the most recent active or trial subscription
+    Only returns ACTIVE or CANCELING subscriptions
+    
+    For CANCELING subscriptions:
+    - If they have downgrade_to_plan, keep them active even past end_date (user keeps access until new payment succeeds)
+    - If no downgrade_to_plan (cancellation), expire them at end_date
     """
-    return Subscription.objects.filter(
+    now = timezone.now()
+    subscription = Subscription.objects.filter(
         user=user,
-        status__in=[Subscription.Status.ACTIVE, Subscription.Status.TRIAL]
-    ).select_related('plan').order_by('-created_at').first()
+        status__in=[Subscription.Status.ACTIVE, Subscription.Status.CANCELING]
+    ).select_related('plan', 'downgrade_to_plan').order_by('-created_at').first()
+    
+    # Check if subscription has expired
+    if subscription and subscription.end_date and subscription.end_date < now:
+        # Special case: CANCELING subscriptions with downgrade_to_plan stay active past end_date
+        # This ensures user keeps old plan access until new payment succeeds (for downgrades)
+        if subscription.status == Subscription.Status.CANCELING and subscription.downgrade_to_plan:
+            # Keep it active - user retains access until downgrade payment succeeds
+            return subscription
+        
+        # Regular expiration: Mark as expired and return None
+        subscription.status = Subscription.Status.EXPIRED
+        subscription.save()
+        return None
+    
+    return subscription
 
 
 def get_user_plan(user: User) -> Optional[Plan]:

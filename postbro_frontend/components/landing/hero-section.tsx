@@ -104,41 +104,53 @@ function CardAnimation({
 
 export function HeroSection() {
   return (
-    <section className="relative pt-24 pb-12 md:pt-40 md:pb-24 overflow-hidden">
-      {/* Background gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] opacity-30 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-purple-500/30 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen animate-blob" />
+    <section className="relative pt-24 pb-12 md:pt-36 md:pb-20 overflow-hidden">
+      {/* Subtle background elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Very subtle gradient orbs */}
+        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-primary/[0.03] rounded-full blur-[120px]" />
+        <div className="absolute top-40 right-1/4 w-[400px] h-[400px] bg-purple-500/[0.02] rounded-full blur-[100px]" />
+        
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,transparent_0%,transparent_49%,var(--border)_50%,transparent_51%,transparent_100%),linear-gradient(to_bottom,transparent_0%,transparent_49%,var(--border)_50%,transparent_51%,transparent_100%)] bg-[size:80px_80px] opacity-[0.03]" />
       </div>
 
       <div className="container px-4 mx-auto relative z-10">
-        <div className="text-center max-w-4xl mx-auto mb-8 md:mb-12">
+        <div className="text-center max-w-4xl mx-auto mb-8 md:mb-16">
           <FadeInUp delay={0.1}>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-background/50 backdrop-blur-sm mb-6 text-sm font-medium text-muted-foreground shadow-sm hover:border-primary/50 transition-colors cursor-default">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-border/50 bg-card/50 backdrop-blur-sm mb-6 sm:mb-8 text-xs sm:text-sm font-medium text-muted-foreground shadow-sm">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
               Analyze social posts instantly
             </div>
           </FadeInUp>
 
           <FadeInUp delay={0.2} duration={0.7}>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70 pb-2">
-              Decode Viral Posts — Create <span className="text-primary">Viral Content</span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-5 sm:mb-6 text-foreground px-2 sm:px-0">
+              Decode Viral Posts
+              <br className="sm:hidden" />
+              <span className="hidden sm:inline"> — </span>
+              <span className="sm:hidden block mt-1" />
+              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                Create Viral Content
+              </span>
             </h1>
           </FadeInUp>
 
           <FadeInUp delay={0.3} duration={0.7}>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              Analyze any Instagram, X, or YouTube post by URL or username. <span className="font-medium text-foreground">AI</span> discovers why it went viral, shows detailed metrics, and generates similar post ideas to create your own winning content. Works with images, videos, and all content types.
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2 sm:px-0">
+              Analyze any Instagram, X, or YouTube post.{" "}
+              <span className="font-medium text-foreground">AI</span> discovers why it went viral and generates similar post ideas.
             </p>
           </FadeInUp>
 
           <FadeInUp delay={0.4}>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4 sm:px-0">
               <Button
                 size="lg"
-                className="h-12 px-8 text-base bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 rounded-full"
+                className="w-full sm:w-auto h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base font-medium bg-foreground text-background hover:bg-foreground/90 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
                 asChild
               >
                 <Link href="/signup">
@@ -149,122 +161,119 @@ export function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-12 px-8 text-base bg-background/50 backdrop-blur-sm border-border hover:bg-accent/50 rounded-full"
+                className="w-full sm:w-auto h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base font-medium bg-transparent border-border/60 hover:bg-muted/50 rounded-xl transition-all duration-300"
                 asChild
               >
-                <Link href="#features">View Demo</Link>
+                <Link href="#features">See How It Works</Link>
               </Button>
+            </div>
+          </FadeInUp>
+          
+          {/* Trust indicators - Mobile optimized */}
+          <FadeInUp delay={0.5}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 mt-8 sm:mt-10 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-4 text-primary" />
+                <span>AI-Powered</span>
+              </div>
+              <div className="hidden sm:block w-1 h-1 rounded-full bg-border" />
+              <span className="text-center">No account connection</span>
+              <div className="hidden sm:block w-1 h-1 rounded-full bg-border" />
+              <span>Free tier available</span>
             </div>
           </FadeInUp>
         </div>
 
-        {/* Hero Visual */}
+        {/* Hero Visual - Refined & Mobile Optimized */}
         <motion.div
-          className="relative max-w-6xl mx-auto mt-8 md:mt-20 mb-8 md:mb-0"
-          initial={{ opacity: 0, y: 40 }}
+          className="relative max-w-5xl mx-auto mt-4 sm:mt-0"
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
         >
-          <div className="relative rounded-xl overflow-hidden min-h-[400px] md:min-h-[700px]">
-            {/* Centered gradient blob */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] opacity-20 pointer-events-none">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-primary/10 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen" />
+          {/* Subtle background for cards area */}
+          <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-muted/20 to-transparent rounded-2xl sm:rounded-3xl -z-10" />
+          
+          <div className="relative rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-10">
+            {/* Section heading */}
+            <div className="text-center mb-6 sm:mb-10">
+              <FadeInUp delay={0.1} duration={0.8}>
+                <p className="text-[10px] sm:text-xs font-semibold text-primary uppercase tracking-wider mb-2 sm:mb-3">What You Can Analyze</p>
+                <h3 className="text-base sm:text-xl md:text-2xl font-semibold text-foreground">
+                  <span className="hidden sm:inline">Captions • Images • Videos • Comments</span>
+                  <span className="sm:hidden">Captions, Images, Videos & Comments</span>
+                </h3>
+              </FadeInUp>
             </div>
 
-            {/* Analysis Results Cards */}
-            <div className="p-6 md:p-8 py-12 md:py-16 h-full flex flex-col items-center justify-center">
-              <div className="w-full max-w-4xl">
-                {/* Heading */}
-                <div className="text-center mb-12 md:mb-16">
-                  <FadeInUp delay={0.1} duration={0.8}>
-                    <h3 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-foreground mb-4 leading-tight">
-                      Analyze <span className="text-primary">Captions</span>, <span className="text-primary">Images</span>, <span className="text-primary">Videos</span> & <span className="text-primary">Comments</span>
-                    </h3>
-                  </FadeInUp>
-                  <FadeInUp delay={0.2} duration={0.8}>
-                    <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                      Get engagement metrics, likes, comments count, and insights on why content performs
+            {/* Analysis Results Cards - Mobile Optimized */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 pointer-events-none select-none">
+              {/* Instagram Card */}
+              <CardAnimation direction="left">
+                <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-border/40 shadow-lg shadow-black/[0.03] dark:shadow-black/20 sm:rotate-[-1deg] sm:hover:rotate-0 transition-all duration-500">
+                  <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                    <div className="size-7 sm:size-8 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600 p-[2px]">
+                      <div className="size-full rounded-full bg-card flex items-center justify-center">
+                        <Instagram className="size-3 sm:size-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs sm:text-sm font-semibold">@gymshark</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Instagram Reel</p>
+                    </div>
+                  </div>
+                  <div className="relative aspect-[4/3] sm:aspect-[4/5] bg-muted/30 rounded-lg sm:rounded-xl mb-3 sm:mb-4 overflow-hidden">
+                    <img 
+                      src="/gymshark_insta_2.jpg" 
+                      alt="Gymshark Instagram post" 
+                      className="w-full h-full object-cover object-top"
+                    />
+                    <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-black/70 text-white text-[9px] sm:text-[10px] font-medium px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full backdrop-blur-sm">
+                      REEL
+                    </div>
+                  </div>
+                  <div className="space-y-2 sm:space-y-3">
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1 sm:line-clamp-2">Don't give up 💪 #gymshark</p>
+                    <div className="flex items-center gap-3 sm:gap-4 text-[10px] sm:text-xs">
+                      <span className="font-semibold text-foreground">1.1M views</span>
+                      <span className="text-muted-foreground">45K likes</span>
+                      <span className="text-muted-foreground hidden sm:inline">2.3K comments</span>
+                    </div>
+                  </div>
+                </div>
+              </CardAnimation>
+
+              {/* Twitter/X Card */}
+              <CardAnimation direction="right">
+                <div className="bg-card rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-border/40 shadow-lg shadow-black/[0.03] dark:shadow-black/20 sm:rotate-[1deg] sm:hover:rotate-0 transition-all duration-500 md:mt-8">
+                  <div className="flex items-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                    <div className="size-7 sm:size-8 rounded-full bg-foreground flex items-center justify-center">
+                      <Twitter className="size-3 sm:size-4 text-background" />
+                    </div>
+                    <div>
+                      <p className="text-xs sm:text-sm font-semibold">Tanya <span className="font-normal text-muted-foreground text-[10px] sm:text-xs">@Tanya_Sabrinaaa</span></p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Nov 19</p>
+                    </div>
+                  </div>
+                  <div className="relative aspect-[16/10] sm:aspect-video bg-muted/30 rounded-lg sm:rounded-xl mb-3 sm:mb-4 overflow-hidden">
+                    <img 
+                      src="/tanya_x.jpeg" 
+                      alt="Tanya's tweet" 
+                      className="w-full h-full object-cover object-top"
+                    />
+                  </div>
+                  <div className="space-y-2 sm:space-y-3">
+                    <p className="text-xs sm:text-sm leading-relaxed line-clamp-2">
+                      wearing shoes that are way too big for you is the male equivalent of stuffing your bra
                     </p>
-                  </FadeInUp>
+                    <div className="flex items-center gap-3 sm:gap-4 text-[10px] sm:text-xs">
+                      <span className="font-semibold text-foreground">3.7M views</span>
+                      <span className="text-muted-foreground">124K ♥</span>
+                      <span className="text-muted-foreground">18K ↻</span>
+                    </div>
+                  </div>
                 </div>
-
-                {/* Analysis Results Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 opacity-95 pointer-events-none select-none">
-                  {/* Instagram Card - Entered via Username */}
-                  <CardAnimation direction="left">
-                    <div className="bg-background rounded-xl p-4 border border-border shadow-lg rotate-[-2deg] hover:rotate-0 transition-transform duration-300">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="size-6 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 p-[1.5px]">
-                          <div className="size-full rounded-full bg-background flex items-center justify-center">
-                            <Instagram className="size-3" />
-                          </div>
-                        </div>
-                        <span className="text-xs text-muted-foreground">Analyzed via: @gymshark</span>
-                      </div>
-                    </div>
-                    <div className="relative h-64 bg-muted/20 rounded-lg mb-3 overflow-hidden">
-                      <img 
-                        src="/gymshark_insta_2.jpg" 
-                        alt="Gymshark Instagram post" 
-                        className="w-full h-full object-cover object-top"
-                      />
-                      <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full">
-                        REEL
-                      </div>
-                    </div>
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center gap-3 text-xs">
-                        <span className="font-semibold">@gymshark</span>
-                        <span className="text-muted-foreground">Don't give up #gymshark</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="font-medium">1.1M views</span>
-                        <span>45K likes</span>
-                        <span>2.3K comments</span>
-                      </div>
-                    </div>
-                    </div>
-                  </CardAnimation>
-
-                  {/* Twitter/X Card - Entered via URL */}
-                  <CardAnimation direction="right">
-                    <div className="bg-background rounded-xl p-4 border border-border shadow-lg rotate-[2deg] hover:rotate-0 transition-transform duration-300 mt-8 md:mt-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="size-6 rounded-full bg-foreground text-background flex items-center justify-center">
-                          <Twitter className="size-3" />
-                        </div>
-                        <span className="text-xs text-muted-foreground">Analyzed via: URL</span>
-                      </div>
-                    </div>
-                    <div className="relative h-56 bg-muted/20 rounded-lg mb-3 overflow-hidden">
-                      <img 
-                        src="/tanya_x.jpeg" 
-                        alt="Tanya's tweet" 
-                        className="w-full h-full object-cover object-top"
-                      />
-                    </div>
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="font-semibold">Tanya</span>
-                        <span className="text-muted-foreground">@Tanya_Sabrinaaa</span>
-                        <span className="text-muted-foreground">· Nov 19</span>
-                      </div>
-                      <p className="text-base leading-relaxed">
-                        wearing shoes that are way too big for you is the male equivalent of stuffing your bra
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>3.7M views</span>
-                        <span>124K</span>
-                        <span>18K</span>
-                        <span>2.1K</span>
-                      </div>
-                    </div>
-                    </div>
-                  </CardAnimation>
-                </div>
-              </div>
+              </CardAnimation>
             </div>
           </div>
         </motion.div>

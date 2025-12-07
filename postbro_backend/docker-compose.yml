@@ -73,19 +73,20 @@ services:
       timeout: 10s
       retries: 3
 
-  # celery-beat: Not needed yet - no scheduled tasks
-  # Uncomment when you need periodic tasks:
-  # celery-beat:
-  #   build: .
-  #   container_name: postbro_celery_beat
-  #   env_file: .env
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - redis
-  #     - backend
-  #   volumes:
-  #     - logs_volume:/app/logs
-  #   command: celery -A postbro beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+  celery-beat:
+    build: .
+    container_name: postbro_celery_beat
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - .:/app
+      - logs_volume:/app/logs_data
+    command: celery -A postbro beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    networks:
+      - default
 
 networks:
   default:

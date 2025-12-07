@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { billingApi, type Subscription } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, Calendar, CheckCircle2, XCircle, Clock } from "lucide-react"
+import { AlertCircle, Calendar, CheckCircle2, XCircle, Clock, Receipt, CreditCard } from "lucide-react"
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 
@@ -33,16 +33,14 @@ export function BillingHistory() {
 
   if (isLoading) {
     return (
-      <div className="bg-background rounded-xl border border-border shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-border">
+      <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
+        <div className="p-6 border-b border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-transparent">
           <Skeleton className="h-6 w-48 mb-2" />
           <Skeleton className="h-4 w-64" />
         </div>
         <div className="p-6 space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="space-y-2">
-              <Skeleton className="h-20 w-full" />
-            </div>
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
           ))}
         </div>
       </div>
@@ -51,9 +49,9 @@ export function BillingHistory() {
 
   if (error) {
     return (
-      <div className="bg-background rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
         <div className="p-6">
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="rounded-xl">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
@@ -62,88 +60,130 @@ export function BillingHistory() {
     )
   }
 
-  const getStatusIcon = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
       case 'active':
+        return { 
+          icon: CheckCircle2, 
+          color: 'text-green-500',
+          bg: 'bg-green-500/10',
+          badge: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20'
+        }
       case 'trial':
-        return <CheckCircle2 className="size-4 text-green-600 dark:text-green-400" />
+        return { 
+          icon: Clock, 
+          color: 'text-amber-500',
+          bg: 'bg-amber-500/10',
+          badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+        }
       case 'cancelled':
+        return { 
+          icon: XCircle, 
+          color: 'text-red-500',
+          bg: 'bg-red-500/10',
+          badge: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
+        }
       case 'expired':
-        return <XCircle className="size-4 text-red-600 dark:text-red-400" />
+        return { 
+          icon: XCircle, 
+          color: 'text-muted-foreground',
+          bg: 'bg-muted',
+          badge: 'bg-muted text-muted-foreground border-border'
+        }
       default:
-        return <Clock className="size-4 text-amber-600 dark:text-amber-400" />
-    }
-  }
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'active':
-      case 'trial':
-        return 'default'
-      case 'cancelled':
-        return 'destructive'
-      case 'expired':
-        return 'secondary'
-      default:
-        return 'outline'
+        return { 
+          icon: Clock, 
+          color: 'text-muted-foreground',
+          bg: 'bg-muted',
+          badge: 'bg-muted text-muted-foreground border-border'
+        }
     }
   }
 
   return (
-    <div className="bg-background rounded-xl border border-border shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-border">
-        <h2 className="text-xl font-semibold mb-2">Billing History</h2>
-        <p className="text-sm text-muted-foreground">
-          View your subscription history and payment records
-        </p>
+    <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
+      {/* Header */}
+      <div className="p-6 border-b border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-transparent">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-primary/10">
+            <Receipt className="size-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Billing History</h2>
+            <p className="text-sm text-muted-foreground">
+              View your subscription history and payment records
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="p-6">
         {subscriptions.length === 0 ? (
-          <div className="text-center py-12">
-            <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <p className="text-muted-foreground">No subscription history found</p>
+          <div className="text-center py-16">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted/50 mb-5">
+              <CreditCard className="size-7 text-muted-foreground" />
+            </div>
+            <p className="text-base font-medium mb-1">No billing history</p>
+            <p className="text-sm text-muted-foreground">Your subscription history will appear here</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {subscriptions.map((subscription) => (
-              <div
-                key={subscription.id}
-                className="border border-border rounded-lg p-4 hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3">
-                      {getStatusIcon(subscription.status)}
-                      <h3 className="font-semibold text-lg">{subscription.plan.name}</h3>
-                      <Badge variant={getStatusBadgeVariant(subscription.status)}>
-                        {subscription.status === 'trial' ? 'Trial' : subscription.status}
-                      </Badge>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="size-4" />
-                        <span>
-                          Started: {format(new Date(subscription.start_date), 'MMM dd, yyyy')}
-                        </span>
+          <div className="space-y-3">
+            {subscriptions.map((subscription, index) => {
+              const statusConfig = getStatusConfig(subscription.status)
+              const StatusIcon = statusConfig.icon
+              const isFirst = index === 0
+              
+              return (
+                <div
+                  key={subscription.id}
+                  className={`relative rounded-xl p-5 transition-all duration-200 border ${
+                    isFirst 
+                      ? 'bg-gradient-to-r from-primary/5 via-transparent to-transparent border-primary/20' 
+                      : 'border-border/50 hover:bg-muted/30 hover:border-border/70'
+                  }`}
+                >
+                  {/* Current indicator */}
+                  {isFirst && subscription.status === 'active' && (
+                    <div className="absolute -left-px top-4 bottom-4 w-1 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
+                  )}
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    {/* Plan info */}
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className={`p-2 rounded-lg ${statusConfig.bg}`}>
+                        <StatusIcon className={`size-4 ${statusConfig.color}`} />
                       </div>
-                      {subscription.end_date && (
+                      <div>
                         <div className="flex items-center gap-2">
-                          <Calendar className="size-4" />
-                          <span>
-                            Ended: {format(new Date(subscription.end_date), 'MMM dd, yyyy')}
-                          </span>
+                          <h3 className="font-semibold">{subscription.plan.name}</h3>
+                          <Badge className={statusConfig.badge}>
+                            {subscription.status === 'trial' ? 'Trial' : subscription.status}
+                          </Badge>
                         </div>
-                      )}
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="size-3" />
+                            {format(new Date(subscription.start_date), 'MMM dd, yyyy')}
+                          </span>
+                          {subscription.end_date && (
+                            <>
+                              <span>→</span>
+                              <span>{format(new Date(subscription.end_date), 'MMM dd, yyyy')}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-muted-foreground">Price:</span>
-                      <span className="font-semibold">${subscription.plan.price}/month</span>
+                    
+                    {/* Price */}
+                    <div className="text-right">
+                      <span className="text-lg font-bold">${subscription.plan.price}</span>
+                      <span className="text-sm text-muted-foreground">/mo</span>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

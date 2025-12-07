@@ -90,7 +90,7 @@ def signup(request):
         # Auto-create Free subscription
         try:
             free_plan = Plan.objects.get(name='Free', is_active=True)
-            Subscription.objects.get_or_create(
+            subscription, created = Subscription.objects.get_or_create(
                 user=user,
                 plan=free_plan,
                 defaults={
@@ -98,8 +98,25 @@ def signup(request):
                     'start_date': timezone.now()
                 }
             )
+            
+            if created:
+                logger.info(f"✅ Created Free subscription for user {user.id} (email: {user.email})")
+            else:
+                # Subscription already exists - ensure it's active
+                if subscription.status != Subscription.Status.ACTIVE:
+                    logger.warning(f"⚠️ Existing subscription for user {user.id} has status {subscription.status}, updating to ACTIVE")
+                    subscription.status = Subscription.Status.ACTIVE
+                    subscription.start_date = timezone.now()
+                    subscription.save()
+                else:
+                    logger.info(f"✅ User {user.id} already has active Free subscription")
+                    
         except Plan.DoesNotExist:
-            pass  # Plan will be created by migration
+            logger.error(f"❌ Free plan not found in database - subscription not created for user {user.id}")
+            # Don't fail signup - user can still use the app
+        except Exception as e:
+            logger.error(f"❌ Failed to create Free subscription for user {user.id}: {str(e)}", exc_info=True)
+            # Don't fail signup if subscription creation fails - user can still use the app
         
         # Log successful signup
         try:
@@ -399,18 +416,30 @@ def profile(request):
 @permission_classes([IsAuthenticated])
 def current_subscription(request):
     """
-    Get user's current subscription
+    Get user's current subscription (ACTIVE or CANCELING)
+    CANCELING subscriptions are returned so frontend can show downgrade status
+    PENDING subscriptions are not returned - user stays on current plan until payment confirmed
+    Returns null if no active/canceling subscription (user is on free plan)
     """
     try:
+        # Return ACTIVE or CANCELING subscriptions - user should see their current plan even if downgrading
         subscription = Subscription.objects.filter(
             user=request.user,
-            status__in=[Subscription.Status.ACTIVE, Subscription.Status.TRIAL]
-        ).select_related('plan').first()
+            status__in=[Subscription.Status.ACTIVE, Subscription.Status.CANCELING]
+        ).select_related('plan', 'downgrade_to_plan').order_by('-created_at').first()
+        
+        # Check if subscription has expired
+        if subscription and subscription.end_date and subscription.end_date < timezone.now():
+            # Mark as expired
+            subscription.status = Subscription.Status.EXPIRED
+            subscription.save()
+            subscription = None
         
         if not subscription:
+            # Return null instead of 404 - user is on free plan
             return Response(
-                {'error': 'No active subscription found'},
-                status=status.HTTP_404_NOT_FOUND
+                {'subscription': None},
+                status=status.HTTP_200_OK
             )
         
         serializer = SubscriptionSerializer(subscription)

@@ -26,6 +26,7 @@ def check_existing_posts(urls: List[str], platform: str) -> Dict[str, Optional[P
         Dictionary mapping URL to Post instance (or None if post doesn't exist)
     """
     existing_posts = {}
+    logger.info(f"🔍 [DuplicateCheck] Starting check for {len(urls)} URLs on platform '{platform}'")
     
     try:
         # Map analysis request platform to social Platform model
@@ -37,7 +38,7 @@ def check_existing_posts(urls: List[str], platform: str) -> Dict[str, Optional[P
         platform_name = platform_name_map.get(platform)
         
         if not platform_name:
-            logger.warning(f"Unknown platform {platform} for duplicate check")
+            logger.warning(f"⚠️ [DuplicateCheck] Unknown platform '{platform}' for duplicate check")
             return {url: None for url in urls}
         
         platform_obj = Platform.objects.get(name=platform_name)
@@ -46,7 +47,7 @@ def check_existing_posts(urls: List[str], platform: str) -> Dict[str, Optional[P
             post_id = extract_post_id(url, platform)
             if not post_id:
                 existing_posts[url] = None
-                logger.debug(f"Could not extract post ID from {url}")
+                logger.warning(f"⚠️ [DuplicateCheck] Could not extract post_id from URL: {url} (platform: {platform})")
                 continue
             
             try:
@@ -58,7 +59,7 @@ def check_existing_posts(urls: List[str], platform: str) -> Dict[str, Optional[P
                 logger.info(f"✅ [DuplicateCheck] Found existing post for {url}: {post.id} (@{post.username})")
             except Post.DoesNotExist:
                 existing_posts[url] = None
-                logger.info(f"🆕 [DuplicateCheck] New post for {url}")
+                logger.info(f"🆕 [DuplicateCheck] New post for {url} (post_id: {post_id})")
             except Post.MultipleObjectsReturned:
                 # Shouldn't happen due to unique_together, but handle gracefully
                 post = Post.objects.filter(
@@ -69,11 +70,13 @@ def check_existing_posts(urls: List[str], platform: str) -> Dict[str, Optional[P
                 logger.warning(f"⚠️ [DuplicateCheck] Multiple posts found for {url}, using first: {post.id if post else None}")
                 
     except Platform.DoesNotExist:
-        logger.error(f"Platform '{platform_name}' not found in database")
+        logger.error(f"❌ [DuplicateCheck] Platform '{platform_name}' not found in database")
         return {url: None for url in urls}
     except Exception as e:
-        logger.error(f"Error checking existing posts: {e}", exc_info=True)
+        logger.error(f"❌ [DuplicateCheck] Error checking existing posts (platform={platform}, urls={len(urls)}): {type(e).__name__}: {str(e)}", exc_info=True)
         return {url: None for url in urls}
     
+    existing_count = sum(1 for p in existing_posts.values() if p is not None)
+    logger.info(f"📊 [DuplicateCheck] Check complete: {existing_count} existing, {len(urls) - existing_count} new")
     return existing_posts
 

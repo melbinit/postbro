@@ -10,6 +10,7 @@ import { Menu, BarChart2, LogOut, ChevronRight } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { useAuth, useClerk } from "@clerk/nextjs"
 import { toast } from "sonner"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function Header() {
   const pathname = usePathname()
@@ -48,6 +49,57 @@ export function Header() {
 
   if (isAuthPage) return null
 
+  // Loading state - show skeleton to prevent flash
+  if (!isLoaded) {
+    return (
+      <header
+        className={cn(
+          "fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent",
+          isScrolled
+            ? "bg-background/80 backdrop-blur-md border-border/50 supports-[backdrop-filter]:bg-background/60"
+            : "bg-transparent",
+        )}
+      >
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          {/* Logo - always visible */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="size-8 rounded-lg bg-primary flex items-center justify-center">
+              <BarChart2 className="size-5 text-primary-foreground" />
+            </div>
+            <span className="font-bold text-xl tracking-tight">PostBro</span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {link.name}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Right side - Skeleton for auth buttons */}
+          <div className="hidden md:flex items-center gap-4">
+            <ModeToggle />
+            <div className="h-6 w-px bg-border" />
+            <Skeleton className="h-9 w-16 rounded-md" />
+            <Skeleton className="h-9 w-24 rounded-md" />
+          </div>
+
+          {/* Mobile - just show mode toggle and skeleton */}
+          <div className="flex items-center gap-4 md:hidden">
+            <ModeToggle />
+            <Skeleton className="h-9 w-9 rounded-md" />
+          </div>
+        </div>
+      </header>
+    )
+  }
+
   return (
     <header
       className={cn(
@@ -85,7 +137,7 @@ export function Header() {
           </nav>
         )}
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-4 animate-in fade-in duration-300">
           {isAuth ? (
             <>
               <ModeToggle />

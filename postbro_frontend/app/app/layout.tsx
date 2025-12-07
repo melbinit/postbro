@@ -21,7 +21,7 @@ export default function AppLayout({
         <AppHeader onMenuClick={() => setIsSidebarOpen(true)} />
         <div className="flex flex-1 pt-16 h-[calc(100vh-4rem)] overflow-hidden">
           {/* Desktop Sidebar - Persists across route changes */}
-          <aside className="hidden md:flex w-64 bg-background/50 backdrop-blur-sm flex-col h-full border-r border-border/30">
+          <aside className="hidden md:flex w-64 bg-background/80 backdrop-blur-sm flex-col h-full border-r border-border/50 shadow-sm">
             <AppSidebar />
           </aside>
 

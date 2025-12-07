@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react"
 import { chatApi, ChatMessage } from "@/lib/api"
 import { ChatMessage as ChatMessageComponent } from "./chat-message"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Sparkles } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
+import { toast } from "sonner"
 
 interface ChatMessagesProps {
   postAnalysisId: string
@@ -239,11 +240,14 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
             // Clear streaming message
             setStreamingMessage(undefined)
           },
-          // onError callback
+          // onError callback (for SSE stream errors during streaming)
           (error) => {
             console.error('❌ [ChatMessages] Streaming error:', error)
             setStreamingMessage(undefined)
             setError(error)
+            
+            // Show toast with clean backend error message
+            toast.error(error || 'Failed to send message')
           }
         )) {
           // Chunks are handled by onChunk callback above
@@ -253,7 +257,19 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
       } catch (err: any) {
         console.error('❌ [ChatMessages] Stream error:', err)
         setStreamingMessage(undefined)
-        setError(err.message || 'Failed to stream message')
+        
+        // Extract backend error message (remove "Stream failed: 429" prefix if present)
+        let errorMessage = err.message || 'Failed to stream message'
+        if (errorMessage.includes('Stream failed:')) {
+          // Extract the actual error message after "Stream failed: 429 "
+          const match = errorMessage.match(/Stream failed: \d+ (.+)/)
+          if (match && match[1]) {
+            errorMessage = match[1]
+          }
+        }
+        
+        setError(errorMessage)
+        // Note: Toast is shown in onError callback with clean message, no need to show here
       }
     }
 
@@ -342,15 +358,19 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
       {/* AI thinking indicator - only show if no streaming content yet */}
       {isWaitingForResponse && (!streamingMessage || !streamingMessage.content) && (
         <div ref={thinkingLoaderRef} className="flex gap-3 md:gap-4 w-full">
-          <div className="flex-shrink-0">
-            <div className="size-7 md:size-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-sm">
-              <span className="text-white text-xs md:text-sm font-bold">PB</span>
+          <div className="flex-shrink-0 mt-0.5">
+            <div className="size-7 md:size-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center ring-2 ring-background">
+              <Sparkles className="size-3.5 md:size-4 text-white" />
             </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="rounded-2xl rounded-tl-sm px-4 py-3 md:px-5 md:py-3.5 text-sm leading-relaxed bg-card/80 backdrop-blur-sm border border-border/40 shadow-sm inline-flex items-center gap-2.5">
-              <Spinner className="h-4 w-4 text-primary" />
-              <span className="text-muted-foreground">Thinking...</span>
+          <div className="flex-1 min-w-0 pt-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm text-muted-foreground">Thinking</span>
+              <span className="flex gap-0.5">
+                <span className="size-1 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
+                <span className="size-1 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
+                <span className="size-1 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
+              </span>
             </div>
           </div>
         </div>

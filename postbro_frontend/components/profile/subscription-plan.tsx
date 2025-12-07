@@ -111,10 +111,38 @@ export function SubscriptionPlan({ compact }: SubscriptionPlanProps) {
   const plan = subscription.plan
   // Backend treats both 'active' and 'trial' as valid subscriptions
   const isActive = subscription.status === 'active' || subscription.status === 'trial'
+  const isScheduledDowngrade = subscription.status === 'canceling' && subscription.downgrade_to_plan
   const price = parseFloat(plan.price).toFixed(0)
+
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return ''
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })
+    } catch {
+      return dateString
+    }
+  }
 
   return (
     <div className="bg-background rounded-xl border border-border shadow-sm overflow-hidden h-full">
+      {/* Scheduled Downgrade Alert */}
+      {isScheduledDowngrade && subscription.downgrade_to_plan && (
+        <div className="p-3 border-b border-border bg-muted/30">
+          <Alert className="py-1.5 px-2">
+            <AlertCircle className="h-3 w-3 text-muted-foreground" />
+            <AlertDescription className="text-xs text-muted-foreground py-0">
+              Downgrading to <strong className="text-foreground">{subscription.downgrade_to_plan.name}</strong> on{' '}
+              <strong className="text-foreground">{formatDate(subscription.end_date)}</strong>
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+
       <div className="p-6 border-b border-border bg-gradient-to-br from-primary/5 via-transparent to-transparent">
         <div className="flex items-center gap-2 mb-4">
           <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -132,7 +160,13 @@ export function SubscriptionPlan({ compact }: SubscriptionPlanProps) {
             </div>
           </div>
 
-          {!isActive && (
+          {isScheduledDowngrade && subscription.downgrade_to_plan && (
+            <Badge variant="outline" className="text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-700">
+              Downgrading to {subscription.downgrade_to_plan.name}
+            </Badge>
+          )}
+
+          {!isActive && !isScheduledDowngrade && (
             <Badge variant="outline" className="text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700">
               {subscription.status === 'cancelled' ? 'Cancelled' : subscription.status === 'expired' ? 'Expired' : subscription.status}
             </Badge>
@@ -167,32 +201,12 @@ export function SubscriptionPlan({ compact }: SubscriptionPlanProps) {
         <ul className="space-y-3">
           <li className="flex items-center gap-2 text-sm text-muted-foreground">
             <Check className="size-4 text-green-500 shrink-0" />
-            <span>{plan.max_handles} handle {plan.max_handles === 1 ? 'analysis' : 'analyses'} per day</span>
+            <span>{plan.max_urls} posts per day</span>
           </li>
           <li className="flex items-center gap-2 text-sm text-muted-foreground">
             <Check className="size-4 text-green-500 shrink-0" />
-            <span>{plan.max_urls} URL lookups per day</span>
+            <span>{plan.max_questions_per_day || 0} chats per day</span>
           </li>
-          <li className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Check className="size-4 text-green-500 shrink-0" />
-            <span>{plan.max_analyses_per_day} total analyses per day</span>
-          </li>
-          <li className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Check className="size-4 text-green-500 shrink-0" />
-            <span>Instagram & X support</span>
-          </li>
-          {!compact && (
-            <>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Check className="size-4 text-green-500 shrink-0" />
-                <span>Advanced AI insights</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Check className="size-4 text-green-500 shrink-0" />
-                <span>{plan.name === 'Free' ? 'Community' : 'Priority'} support</span>
-              </li>
-            </>
-          )}
         </ul>
       </div>
     </div>
