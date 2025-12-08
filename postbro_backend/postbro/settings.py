@@ -27,19 +27,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production')
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError(
+        'SECRET_KEY environment variable is required. '
+        'Please set it in your .env file or environment variables.'
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+# Default to False for safety - explicitly set DEBUG=True in .env for development
+DEBUG = os.getenv('DEBUG', '').lower() == 'true'
 
 # Allow ngrok domains for local webhook testing
 _default_hosts = 'localhost,127.0.0.1'
 _allowed_hosts = os.getenv('ALLOWED_HOSTS', _default_hosts).split(',')
 
-# Add current ngrok domain for webhook testing (update if ngrok restarts)
-# Get from: curl -s http://localhost:4040/api/tunnels | python3 -c "import sys, json; print(json.load(sys.stdin)['tunnels'][0]['public_url'].replace('https://', '').replace('http://', ''))"
-if DEBUG:
-    _allowed_hosts.append('58ca3475465e.ngrok-free.app')  # Current ngrok domain
+# Add ngrok domain from environment variable if provided (for local development)
+# Set NGROK_DOMAIN in .env if using ngrok for webhook testing
+ngrok_domain = os.getenv('NGROK_DOMAIN')
+if ngrok_domain and DEBUG:
+    _allowed_hosts.append(ngrok_domain.strip())
 
 ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts if h.strip()]
 
