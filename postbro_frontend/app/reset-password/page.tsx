@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BarChart2, ArrowLeft, Mail } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { toast } from "sonner"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authApi, tokenManager } from "@/lib/api"
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [step, setStep] = useState<'request' | 'reset'>('request')
   const [email, setEmail] = useState('')
@@ -209,6 +209,32 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col md:flex-row bg-background">
+        <div className="hidden md:flex w-1/2 bg-muted/30 relative overflow-hidden flex-col p-12 justify-between border-r border-border">
+          <div className="space-y-4">
+            <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+            <div className="h-64 bg-muted rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col p-6 md:p-12 items-center justify-center">
+          <div className="w-full max-w-sm space-y-8">
+            <div className="space-y-4">
+              <div className="h-12 w-12 bg-muted rounded-full animate-pulse mx-auto" />
+              <div className="h-8 w-48 bg-muted rounded animate-pulse mx-auto" />
+              <div className="h-4 w-64 bg-muted rounded animate-pulse mx-auto" />
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }
 
