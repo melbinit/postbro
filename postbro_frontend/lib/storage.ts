@@ -3,6 +3,8 @@
  * Used for caching user data and other frequently accessed data
  */
 
+import { logger } from './logger'
+
 const CACHE_PREFIX = 'postbro_cache_'
 const USER_CACHE_KEY = `${CACHE_PREFIX}user`
 const USER_CACHE_TTL = 30 * 60 * 1000 // 30 minutes in milliseconds
@@ -28,7 +30,7 @@ export function setCachedData<T>(key: string, data: T, ttl: number = USER_CACHE_
     localStorage.setItem(key, JSON.stringify(cached))
   } catch (error) {
     // localStorage might be full or disabled
-    console.warn('Failed to cache data:', error)
+    logger.warn('Failed to cache data:', error)
   }
 }
 
@@ -54,7 +56,7 @@ export function getCachedData<T>(key: string): T | null {
     return cached.data
   } catch (error) {
     // Invalid cache or parse error - remove it
-    console.warn('Failed to read cached data:', error)
+    logger.warn('Failed to read cached data:', error)
     try {
       localStorage.removeItem(key)
     } catch {

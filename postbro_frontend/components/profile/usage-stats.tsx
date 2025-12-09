@@ -10,6 +10,7 @@ import { DateRange } from "react-day-picker"
 import { format } from "date-fns"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { Button } from "@/components/ui/button"
+import { logger } from "@/lib/logger"
 
 interface UsageStatsProps {
   compact?: boolean
@@ -179,7 +180,7 @@ export function UsageStats({ compact, onNavigateToSubscription }: UsageStatsProp
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load usage statistics')
-      console.error('Failed to fetch usage stats:', err)
+      logger.error('[UsageStats] Failed to fetch usage stats:', err)
     } finally {
       setIsLoading(false)
       setShouldFetch(false)

@@ -6,6 +6,7 @@ interface UseAnalysisLoaderProps {
   analysisId: string | null
   isLoaded: boolean
   isSignedIn: boolean
+  getToken: (() => Promise<string | null>) | undefined
   latestStatus: any
   state: AnalysisState
 }
@@ -18,6 +19,7 @@ export function useAnalysisLoader({
   analysisId,
   isLoaded,
   isSignedIn,
+  getToken,
   latestStatus,
   state,
 }: UseAnalysisLoaderProps) {
@@ -62,7 +64,7 @@ export function useAnalysisLoader({
       return
     }
     
-    if (!isLoaded || !isSignedIn) {
+    if (!isLoaded || !isSignedIn || !getToken) {
       console.log('⏳ [AppContent] Waiting for Clerk auth before loading analysis...')
       return
     }
@@ -72,6 +74,19 @@ export function useAnalysisLoader({
     }
     
     const loadAnalysis = async () => {
+      // CRITICAL: Wait for token to be available before making API calls
+      // This prevents 403 errors on page refresh
+      let token: string | null = null
+      try {
+        token = await getToken()
+        if (!token) {
+          console.log('⏳ [AppContent] Token not available yet, waiting...')
+          return
+        }
+      } catch (error) {
+        console.error('Failed to get token:', error)
+        return
+      }
       analysisLoadingRef.current = analysisId
       setIsLoadingAnalysis(true)
       setPosts([])
@@ -222,7 +237,7 @@ export function useAnalysisLoader({
     }
     
     loadAnalysis()
-  }, [analysisId, isLoaded, isSignedIn])
+  }, [analysisId, isLoaded, isSignedIn, getToken])
   
   // Fetch posts when social data is fetched (realtime updates)
   useEffect(() => {

@@ -4,11 +4,13 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Instagram, Send, Hash, ChevronDown, ChevronUp } from "lucide-react"
+import { Instagram, Send, Hash, ChevronDown, ChevronUp, RefreshCw } from "lucide-react"
 import { analysisApi, type AnalysisRequest } from "@/lib/api"
 import { toast } from "sonner"
+import { getSafeErrorMessage, sanitizeErrorMessage } from "@/app/app/_components/utils/error-utils"
 
 interface AnalysisFormProps {
+  currentRequest?: AnalysisRequest | null
   initialValues?: {
     platform?: 'instagram' | 'x' | 'youtube'
     post_urls?: string[]
@@ -17,7 +19,7 @@ interface AnalysisFormProps {
   defaultMinimized?: boolean
 }
 
-export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized = false }: AnalysisFormProps = {}) {
+export function AnalysisForm({ currentRequest, initialValues, onMinimizeChange, defaultMinimized = false }: AnalysisFormProps = {}) {
   const [platform, setPlatform] = useState<'instagram' | 'x' | 'youtube'>(
     initialValues?.platform || 'x'
   )
@@ -26,6 +28,7 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
   )
   const [isLoading, setIsLoading] = useState(false)
   const [isMinimized, setIsMinimized] = useState(defaultMinimized)
+  const [userManuallySelectedPlatform, setUserManuallySelectedPlatform] = useState(false)
 
   // Update minimized state when prop changes
   useEffect(() => {
@@ -41,7 +44,10 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
   // Update form when initialValues change (for prefilling failed analyses)
   useEffect(() => {
     if (initialValues) {
-      if (initialValues.platform) setPlatform(initialValues.platform)
+      if (initialValues.platform) {
+        setPlatform(initialValues.platform)
+        setUserManuallySelectedPlatform(true)
+      }
       if (initialValues.post_urls && initialValues.post_urls.length > 0) {
         setUrl(initialValues.post_urls[0])
       }
@@ -52,6 +58,63 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
       }
     }
   }, [initialValues])
+
+  /**
+   * Detect platform from URL
+   * Returns the detected platform or null if not detected
+   */
+  const detectPlatformFromUrl = (urlString: string): 'instagram' | 'x' | 'youtube' | null => {
+    const trimmedUrl = urlString.trim()
+    if (!trimmedUrl) return null
+
+    // Add https:// if missing
+    let fullUrl = trimmedUrl
+    if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+      fullUrl = 'https://' + trimmedUrl
+    }
+
+    try {
+      const urlObj = new URL(fullUrl.toLowerCase())
+      let hostname = urlObj.hostname
+
+      // Remove www. and m. prefixes
+      if (hostname.startsWith('www.')) {
+        hostname = hostname.substring(4)
+      }
+      if (hostname.startsWith('m.')) {
+        hostname = hostname.substring(2)
+      }
+
+      // Check for Instagram
+      if (hostname.includes('instagram.com') || hostname.includes('instagr.am')) {
+        return 'instagram'
+      }
+
+      // Check for X/Twitter
+      if (hostname.includes('x.com') || hostname.includes('twitter.com') || hostname.includes('t.co')) {
+        return 'x'
+      }
+
+      // Check for YouTube
+      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+        return 'youtube'
+      }
+
+      return null
+    } catch (error) {
+      return null
+    }
+  }
+
+  // Auto-detect platform from URL when user types (only if not manually selected)
+  useEffect(() => {
+    if (!url.trim() || userManuallySelectedPlatform) return
+
+    const detectedPlatform = detectPlatformFromUrl(url)
+    if (detectedPlatform && detectedPlatform !== platform) {
+      setPlatform(detectedPlatform)
+    }
+  }, [url, userManuallySelectedPlatform, platform])
 
   const validateSocialMediaUrl = (url: string, platform: 'instagram' | 'x' | 'youtube'): { valid: boolean; error?: string } => {
     const trimmedUrl = url.trim()
@@ -123,6 +186,19 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
     try {
       setIsLoading(true)
 
+      // If we have a failed analysis, retry it instead of creating new
+      if (currentRequest && currentRequest.status === 'failed') {
+        const retried = await analysisApi.retryAnalysis(currentRequest.id)
+        toast.success('Analysis retry started')
+        
+        // Notify parent component about the retry
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('analysis-retried', { detail: retried }))
+        }
+        return
+      }
+
+      // Otherwise, create new analysis
       const data = {
         platform,
         post_urls: [trimmedUrl]  // Single URL in array
@@ -131,6 +207,7 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
       const analysisRequest = await analysisApi.createAnalysis(data)
       
       setUrl('')
+      setUserManuallySelectedPlatform(false) // Reset so auto-detection works for next URL
       
       // Auto-minimize after successful submission
       handleMinimizeToggle(true)
@@ -140,28 +217,27 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
         window.dispatchEvent(new CustomEvent('analysis-created', { detail: analysisRequest }))
       }
     } catch (error: any) {
-      // Handle API errors with proper messages
+      // Handle API errors with proper messages - always sanitize
+      let message = 'Failed to create analysis'
+      
       if (error?.status === 403 || error?.response?.status === 403) {
         // Usage limit reached
         const errorData = error?.response?.data || error?.data || {}
-        const message = errorData.message || errorData.error || 'Usage limit reached'
-        toast.error(message, {
-          duration: 5000, // Show for 5 seconds
-        })
+        message = errorData.message || errorData.error || 'Usage limit reached'
       } else if (error?.status === 400 || error?.response?.status === 400) {
         // Validation error
         const errorData = error?.response?.data || error?.data || {}
-        const message = errorData.error || errorData.details || 'Invalid input data'
-        toast.error(message, {
-          duration: 5000,
-        })
+        message = errorData.error || errorData.details || 'Invalid input data'
       } else {
-        // Generic error
-        const message = error?.message || error?.response?.data?.error || 'Failed to create analysis'
-        toast.error(message, {
-          duration: 5000,
-        })
+        // Generic error - use safe error extraction
+        message = getSafeErrorMessage(error) || 'Failed to create analysis'
       }
+      
+      // Always sanitize before showing to user
+      const safeMessage = sanitizeErrorMessage(message)
+      toast.error(safeMessage, {
+        duration: 5000,
+      })
     } finally {
       setIsLoading(false)
     }
@@ -215,7 +291,10 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
                 <div className="inline-flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/30 border border-border/40">
                   <button
                     type="button"
-                    onClick={() => setPlatform('x')}
+                    onClick={() => {
+                      setPlatform('x')
+                      setUserManuallySelectedPlatform(true)
+                    }}
                     className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                       platform === 'x'
                         ? 'bg-gradient-to-br from-primary/10 via-primary/8 to-purple-500/8 text-foreground shadow-sm border border-primary/30 dark:border-transparent dark:from-primary/20 dark:via-primary/15 dark:to-purple-500/15'
@@ -227,7 +306,10 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPlatform('instagram')}
+                    onClick={() => {
+                      setPlatform('instagram')
+                      setUserManuallySelectedPlatform(true)
+                    }}
                     className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                       platform === 'instagram'
                         ? 'bg-gradient-to-br from-primary/10 via-primary/8 to-purple-500/8 text-foreground shadow-sm border border-primary/30 dark:border-transparent dark:from-primary/20 dark:via-primary/15 dark:to-purple-500/15'
@@ -239,7 +321,10 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPlatform('youtube')}
+                    onClick={() => {
+                      setPlatform('youtube')
+                      setUserManuallySelectedPlatform(true)
+                    }}
                     className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                       platform === 'youtube'
                         ? 'bg-gradient-to-br from-primary/10 via-primary/8 to-purple-500/8 text-foreground shadow-sm border border-primary/30 dark:border-transparent dark:from-primary/20 dark:via-primary/15 dark:to-purple-500/15'
@@ -266,7 +351,14 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
                       : 'https://www.youtube.com/watch?v=VIDEO_ID'
                   }
                   value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  onChange={(e) => {
+                    const newUrl = e.target.value
+                    setUrl(newUrl)
+                    // Reset manual selection flag if URL is cleared, so auto-detection works for next URL
+                    if (!newUrl.trim()) {
+                      setUserManuallySelectedPlatform(false)
+                    }
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       handleSubmit(e)
@@ -280,9 +372,19 @@ export function AnalysisForm({ initialValues, onMinimizeChange, defaultMinimized
                   type="button"
                   onClick={handleSubmit}
                   disabled={isLoading || !url.trim()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg bg-primary hover:bg-primary/90 shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-xl"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 rounded-lg bg-primary hover:bg-primary/90 shadow-lg flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-xl"
+                  title={currentRequest && currentRequest.status === 'failed' ? 'Retry Analysis' : 'Analyze'}
                 >
-                  <Send className="size-4 text-primary-foreground" />
+                  {isLoading ? (
+                    <span className="text-xs text-primary-foreground">...</span>
+                  ) : currentRequest && currentRequest.status === 'failed' ? (
+                    <>
+                      <RefreshCw className="size-3.5 text-primary-foreground" />
+                      <span className="text-xs font-medium text-primary-foreground">Retry</span>
+                    </>
+                  ) : (
+                    <Send className="size-4 text-primary-foreground" />
+                  )}
                 </button>
               </div>
             </div>

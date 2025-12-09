@@ -94,8 +94,8 @@ def analyze_posts(request):
             **serializer.validated_data
         )
         
-        # Increment usage (after successful creation)
-        increment_usage(request.user, platform, usage_type)
+        # Note: Usage is incremented AFTER successful completion in the Celery task
+        # This ensures users are only charged for successful analyses
         
         # Create initial status
         create_status(
@@ -134,9 +134,9 @@ def analyze_posts(request):
                 'task_id': task.id,
                 'status': 'processing',
                 'usage_info': {
-                    'current': limit_info['current'] + 1,
+                    'current': limit_info['current'],
                     'limit': limit_info['limit'],
-                    'remaining': limit_info['remaining'] - 1
+                    'remaining': limit_info['remaining']
                 }
             },
             status=status.HTTP_201_CREATED

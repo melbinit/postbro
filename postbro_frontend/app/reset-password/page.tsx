@@ -10,6 +10,7 @@ import { useState, useEffect, Suspense } from "react"
 import { toast } from "sonner"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authApi, tokenManager } from "@/lib/api"
+import { getSafeErrorMessage } from "@/app/app/_components/utils/error-utils"
 
 function ResetPasswordContent() {
   const [isLoading, setIsLoading] = useState(false)
@@ -45,7 +46,8 @@ function ResetPasswordContent() {
       toast.success("Password reset email sent! Please check your inbox.")
       setStep('request')
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to send reset email. Please try again.")
+      const safeMessage = getSafeErrorMessage(error) || "Failed to send reset email. Please try again."
+      toast.error(safeMessage)
     } finally {
       setIsLoading(false)
     }
@@ -77,7 +79,8 @@ function ResetPasswordContent() {
       toast.success("Password reset successfully! You can now login with your new password.")
       router.push("/login")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to reset password. Please try again.")
+      const safeMessage = getSafeErrorMessage(error) || "Failed to reset password. Please try again."
+      toast.error(safeMessage)
     } finally {
       setIsLoading(false)
     }

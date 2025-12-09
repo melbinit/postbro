@@ -207,23 +207,38 @@ def login(request):
                     status=status.HTTP_401_UNAUTHORIZED
                 )
             
-            # Sync with Django User model
-            user, created = User.objects.get_or_create(
-                clerk_user_id=clerk_user_id,
-                defaults={
-                    'email': email or f"{clerk_user_id}@clerk.local",
+            # Fetch FULL user data from Clerk API to get first_name/last_name
+            user_data = clerk.get_user(clerk_user_id)
+            first_name = ''
+            last_name = ''
+            full_name = ''
+            
+            if user_data:
+                first_name = user_data.get('first_name', '')
+                last_name = user_data.get('last_name', '')
+                full_name = f"{first_name} {last_name}".strip() if (first_name or last_name) else ''
+                # Update email from user_data if available (more reliable)
+                email_addresses = user_data.get('email_addresses', [])
+                if email_addresses:
+                    email = email_addresses[0].get('email_address', email)
+                    email_verified = email_addresses[0].get('verification', {}).get('status') == 'verified'
+            
+            # Use ClerkAuthentication method which handles:
+            # - User creation/sync
+            # - First/last name sync from Clerk API
+            # - Free subscription creation for new users
+            from .authentication import ClerkAuthentication
+            auth = ClerkAuthentication()
+            user = auth.get_or_create_user_from_clerk(
+                clerk_user_id,
+                email,
+                {
                     'email_verified': email_verified,
-                    'is_active': True
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'full_name': full_name
                 }
             )
-            
-            if not created:
-                # Update user info
-                if email and user.email != email:
-                    user.email = email
-                user.email_verified = email_verified
-                user.is_active = True
-                user.save()
             
             # Log successful login
             try:

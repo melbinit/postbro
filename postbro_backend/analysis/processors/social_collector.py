@@ -137,7 +137,8 @@ def _collect_instagram_posts(
             # SLOW PATH: New post - full processing
             logger.info(f"🔄 [FullPath] New post, full processing for {url}")
             try:
-                results = scraper.scrape_instagram_posts([url], analysis_request_id=analysis_request_id_str)
+                # TEMPORARY: Removed analysis_request_id for retry testing
+                results = scraper.scrape_instagram_posts([url])
                 api_calls += 1
                 
                 for result in results:

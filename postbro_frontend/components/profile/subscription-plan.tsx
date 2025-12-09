@@ -9,6 +9,7 @@ import { plansApi, type Subscription } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { logger } from "@/lib/logger"
 
 interface SubscriptionPlanProps {
   compact?: boolean
@@ -28,7 +29,7 @@ export function SubscriptionPlan({ compact }: SubscriptionPlanProps) {
         setSubscription(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load subscription')
-        console.error('Failed to fetch subscription:', err)
+        logger.error('[SubscriptionPlan] Failed to fetch subscription:', err)
       } finally {
         setIsLoading(false)
       }

@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Calendar, CheckCircle2, XCircle, Clock, Receipt, CreditCard } from "lucide-react"
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
+import { logger } from "@/lib/logger"
 
 export function BillingHistory() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
@@ -22,7 +23,7 @@ export function BillingHistory() {
         setSubscriptions(data.subscriptions)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load billing history')
-        console.error('Failed to fetch subscription history:', err)
+        logger.error('[BillingHistory] Failed to fetch subscription history:', err)
       } finally {
         setIsLoading(false)
       }

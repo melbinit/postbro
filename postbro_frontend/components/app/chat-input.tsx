@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Spinner } from "@/components/ui/spinner"
 import { Send } from "lucide-react"
 import { toast } from "sonner"
+import { getSafeErrorMessage } from "@/app/app/_components/utils/error-utils"
 
 interface ChatInputProps {
   postAnalysisId: string
@@ -106,7 +107,7 @@ export function ChatInput({ postAnalysisId, onMessageSent, showSuggestions = tru
       
     } catch (err: any) {
       console.error("Failed to send message:", err)
-      const errorMessage = err.message || err.data?.message || "Failed to send message. Please try again."
+      const errorMessage = getSafeErrorMessage(err) || "Failed to send message. Please try again."
       toast.error(errorMessage)
       setInput(messageText) // Restore input
       

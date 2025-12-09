@@ -10,6 +10,8 @@ import { useState, useEffect } from "react"
 import { profileApi, type User } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { User as UserIcon, Mail, Building2, Save, Loader2 } from "lucide-react"
+import { getSafeErrorMessage } from "@/app/app/_components/utils/error-utils"
+import { logger } from "@/lib/logger"
 
 export function ProfileForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -32,7 +34,7 @@ export function ProfileForm() {
         })
       } catch (error) {
         toast.error('Failed to load profile')
-        console.error('Failed to fetch profile:', error)
+        logger.error('[ProfileForm] Failed to fetch profile:', error)
       } finally {
         setIsFetching(false)
       }
@@ -53,7 +55,8 @@ export function ProfileForm() {
       setUser(updated)
       toast.success("Profile updated successfully")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update profile")
+      const safeMessage = getSafeErrorMessage(error) || "Failed to update profile"
+      toast.error(safeMessage)
     } finally {
       setIsLoading(false)
     }

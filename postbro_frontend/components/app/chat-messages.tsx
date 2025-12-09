@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Sparkles } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import { toast } from "sonner"
+import { logger } from "@/lib/logger"
 
 interface ChatMessagesProps {
   postAnalysisId: string
@@ -35,7 +36,7 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
     const messageElement = latestUserMessageRef.current
     
     if (!container || !messageElement) {
-      console.warn('⚠️ [ChatMessages] Refs not available', {
+      logger.warn('[ChatMessages] Refs not available', {
         container: !!container,
         message: !!messageElement
       })
@@ -59,7 +60,7 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
     const maxScroll = container.scrollHeight - container.clientHeight
     const clampedTargetScroll = Math.min(Math.max(0, targetScrollTop), maxScroll)
     
-    console.log('📜 [ChatMessages] Scroll calculation:', {
+    logger.debug('[ChatMessages] Scroll calculation:', {
       containerTop: containerRect.top.toFixed(2),
       messageTop: messageRect.top.toFixed(2),
       offset: messageOffsetFromContainerTop.toFixed(2),
@@ -85,7 +86,7 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
         
         container.scrollTop = Math.max(0, newTargetScroll)
         
-        console.log('✅ [ChatMessages] Forced scroll again:', {
+        logger.debug('[ChatMessages] Forced scroll again:', {
           targetScroll: newTargetScroll.toFixed(2),
           actualScroll: container.scrollTop.toFixed(2),
           messageOffsetFromTop: newOffset.toFixed(2)
@@ -106,7 +107,6 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
         }
         setError(null)
         
-        console.log('📥 [ChatMessages] Loading messages for postAnalysisId:', postAnalysisId)
         const existingSessions = await chatApi.listChatSessions(postAnalysisId)
         
         if (existingSessions.sessions.length > 0) {
@@ -114,7 +114,7 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
           const sessionData = await chatApi.getChatSession(existingSession.id)
           
           if (mounted) {
-            console.log('✅ [ChatMessages] Loaded', sessionData.session.messages.length, 'messages')
+            logger.debug(`[ChatMessages] Loaded ${sessionData.session.messages.length} messages`)
             // Mark all loaded messages as complete
             const messagesWithStatus = sessionData.session.messages.map(msg => ({
               ...msg,
@@ -126,18 +126,17 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
           }
         } else {
           if (mounted) {
-            console.log('📭 [ChatMessages] No existing messages')
             setMessages([])
             onMessagesLoaded?.([])
           }
         }
       } catch (err: any) {
-        console.error('❌ [ChatMessages] Failed to load messages:', err)
+        logger.error('[ChatMessages] Failed to load messages:', err)
         if (mounted) {
           // Don't show error for 500 errors - might be transient DB issue
           // Just show empty state and let user try again
           if (err.status === 500) {
-            console.warn('⚠️ [ChatMessages] Server error (500) - likely transient, showing empty state')
+            logger.warn('[ChatMessages] Server error (500) - showing empty state')
             setMessages([])
             onMessagesLoaded?.([])
           } else {
@@ -158,7 +157,6 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
       if (event.detail.postAnalysisId !== postAnalysisId) return
       
       const { userMessage, sessionId } = event.detail
-      console.log('💬 [ChatMessages] User message received:', userMessage.substring(0, 50) + '...')
       
       // Mark that user has sent a message (enables bottom padding for scroll)
       setUserHasSentMessage(true)
@@ -192,8 +190,7 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
       
       // Start streaming
       try {
-        console.log('🚀 [ChatMessages] Starting stream for session:', sessionId)
-        let chunkCount = 0
+        logger.debug(`[ChatMessages] Starting stream: ${sessionId}`)
         let accumulatedContent = '' // Track accumulated content
         
         for await (const chunk of chatApi.streamMessage(
@@ -201,8 +198,6 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
           userMessage,
           // onChunk callback - update streaming message in real-time
           (chunk) => {
-            chunkCount++
-            console.log(`📥 [ChatMessages] Chunk #${chunkCount} received, length:`, chunk.length)
             accumulatedContent += chunk
             
             // Update streaming message content
@@ -218,7 +213,7 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
           },
           // onDone callback - streaming complete
           (data) => {
-            console.log('✅ [ChatMessages] Streaming complete, message_id:', data.message_id)
+            logger.debug(`[ChatMessages] Stream complete: ${data.message_id}`)
             
             // Step 3: Convert streaming message to complete message and add to messages array
             const completedMessage: ChatMessage = {
@@ -231,18 +226,14 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
             }
             
             // Add to messages array (don't fetch from DB)
-            setMessages(prev => {
-              const updated = [...prev, completedMessage]
-              console.log('✅ [ChatMessages] Added assistant message to state, total:', updated.length)
-              return updated
-            })
+            setMessages(prev => [...prev, completedMessage])
             
             // Clear streaming message
             setStreamingMessage(undefined)
           },
           // onError callback (for SSE stream errors during streaming)
           (error) => {
-            console.error('❌ [ChatMessages] Streaming error:', error)
+            logger.error('[ChatMessages] Streaming error:', error)
             setStreamingMessage(undefined)
             setError(error)
             
@@ -251,11 +242,9 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
           }
         )) {
           // Chunks are handled by onChunk callback above
-          console.log('📦 [ChatMessages] Processing chunk in loop')
         }
-        console.log('🏁 [ChatMessages] Stream loop completed')
       } catch (err: any) {
-        console.error('❌ [ChatMessages] Stream error:', err)
+        logger.error('[ChatMessages] Stream error:', err)
         setStreamingMessage(undefined)
         
         // Extract backend error message (remove "Stream failed: 429" prefix if present)
@@ -281,12 +270,11 @@ export function ChatMessages({ postAnalysisId, onMessagesLoaded, scrollContainer
       
       // This event is triggered by chat-input, but we don't need to fetch from DB
       // The streaming message is already added to state in onDone callback
-      console.log('📨 [ChatMessages] handleMessageSent called (no DB fetch needed)')
     }
 
     // Listen for errors
     const handleMessageError = () => {
-      console.log('⚠️ [ChatMessages] Message error event received')
+      logger.warn('[ChatMessages] Message error event received')
       setStreamingMessage(undefined)
     }
 

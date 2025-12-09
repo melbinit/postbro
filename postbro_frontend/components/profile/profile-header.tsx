@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react"
 import { profileApi, type User } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
+import { logger } from "@/lib/logger"
 
 export function ProfileHeader() {
   const [user, setUser] = useState<User | null>(null)
@@ -16,7 +17,7 @@ export function ProfileHeader() {
         const data = await profileApi.getProfile()
         setUser(data)
       } catch (error) {
-        console.error('Failed to fetch profile:', error)
+        logger.error('[ProfileHeader] Failed to fetch profile:', error)
       } finally {
         setIsLoading(false)
       }

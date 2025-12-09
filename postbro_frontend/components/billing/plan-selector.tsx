@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { logger } from "@/lib/logger"
 
 interface PlanSelectorProps {
   currentPlanId?: string
@@ -55,17 +56,11 @@ export function PlanSelector({
         setIsLoading(true)
         setError(null)
         const response = await plansApi.getAllPlans()
-        console.log('📋 [PlanSelector] Plans API response:', response)
-        console.log('📋 [PlanSelector] First plan data:', response.plans[0])
         const filteredPlans = response.plans.filter(plan => plan.is_active)
-        console.log('📋 [PlanSelector] Filtered plans:', filteredPlans)
-        filteredPlans.forEach(plan => {
-          console.log(`📋 [PlanSelector] Plan ${plan.name}: max_questions_per_day =`, plan.max_questions_per_day)
-        })
         setPlans(filteredPlans)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load plans')
-        console.error('Failed to fetch plans:', err)
+        logger.error('[PlanSelector] Failed to fetch plans:', err)
       } finally {
         setIsLoading(false)
       }
@@ -91,13 +86,11 @@ export function PlanSelector({
   const handleSubscribe = async (plan: Plan) => {
     // Wait for Clerk to load
     if (!isLoaded) {
-      console.log('⏳ [PlanSelector] Waiting for Clerk to load...')
       return
     }
     
     // If user is not signed in, redirect to signup
     if (!isSignedIn) {
-      console.log('🔒 [PlanSelector] User not signed in, redirecting to signup')
       router.push(`/signup?plan=${plan.id}`)
       return
     }
@@ -114,20 +107,17 @@ export function PlanSelector({
   }
 
   const proceedWithSubscription = async (plan: Plan) => {
-    console.log('✅ [PlanSelector] User is signed in, proceeding with subscription')
-    
     // Get token before making API call
     let authToken: string | null = null
     try {
       authToken = await getToken()
       if (!authToken) {
-        console.warn('⚠️ [PlanSelector] No token available, redirecting to login')
+        logger.warn('[PlanSelector] No token available, redirecting to login')
         router.push(`/login?redirect=/&plan=${plan.id}`)
         return
       }
-      console.log('✅ [PlanSelector] Token available, length:', authToken.length)
     } catch (tokenError) {
-      console.error('❌ [PlanSelector] Failed to get token:', tokenError)
+      logger.error('[PlanSelector] Failed to get token:', tokenError)
       router.push(`/login?redirect=/&plan=${plan.id}`)
       return
     }
@@ -145,7 +135,7 @@ export function PlanSelector({
           window.location.reload()
         }
       } catch (err) {
-        console.error('Failed to subscribe:', err)
+        logger.error('[PlanSelector] Failed to subscribe:', err)
         toast({
           variant: "destructive",
           title: "Subscription Failed",
@@ -161,11 +151,10 @@ export function PlanSelector({
     try {
       setSubscribingPlanId(plan.id)
       const response = await plansApi.subscribeToPlan(plan.id, authToken)
-      console.log('🔍 [PlanSelector] Subscribe response:', response)
       
       // Check if we got a checkout URL (paid plan - upgrade or new subscription)
       if (response.checkout_url) {
-        console.log('✅ [PlanSelector] Redirecting to checkout:', response.checkout_url)
+        logger.debug('[PlanSelector] Redirecting to checkout')
         // Redirect to Dodo checkout
         window.location.href = response.checkout_url
         // Don't reset subscribingPlanId here - let redirect happen
@@ -174,8 +163,7 @@ export function PlanSelector({
       
       // Handle downgrade response (has downgrade flag)
       if (response.downgrade && response.subscription) {
-        console.log('📅 [PlanSelector] Downgrade scheduled:', response.message)
-        console.log('📅 [PlanSelector] Downgrade subscription data:', response.subscription)
+        logger.debug('[PlanSelector] Downgrade scheduled')
         
         // Show success message via toast
         const message = response.message || 'Downgrade scheduled successfully'
@@ -201,7 +189,6 @@ export function PlanSelector({
       
       // Handle subscription response (free plan or already subscribed)
       if (response.subscription) {
-        console.log('✅ [PlanSelector] Subscription created/updated')
         if (onPlanSelected) {
           onPlanSelected(plan.id)
         } else {
@@ -212,7 +199,7 @@ export function PlanSelector({
       }
       
       // No valid response - show error
-      console.error('❌ [PlanSelector] Invalid response - no checkout_url, downgrade, or subscription:', response)
+      logger.error('[PlanSelector] Invalid response:', response)
       toast({
         variant: "destructive",
         title: "Subscription Failed",
@@ -221,11 +208,10 @@ export function PlanSelector({
       setSubscribingPlanId(null)
       
     } catch (err: any) {
-      console.error('❌ [PlanSelector] Failed to create subscription:', err)
+      logger.error('[PlanSelector] Failed to create subscription:', err)
       
       // Handle authentication errors - redirect to login
       if (err?.status === 401 || err?.status === 403) {
-        console.log('🔒 [PlanSelector] Authentication required, redirecting to login')
         router.push(`/login?redirect=/&plan=${plan.id}`)
         setSubscribingPlanId(null)
         return
@@ -390,7 +376,7 @@ export function PlanSelector({
                   {(() => {
                     const chatCount = plan.max_questions_per_day ?? 0;
                     if (chatCount === 0 || chatCount === undefined || chatCount === null) {
-                      console.warn(`⚠️ [PlanSelector] Plan ${plan.name} has invalid max_questions_per_day:`, plan.max_questions_per_day, 'Full plan object:', plan);
+                      logger.warn(`[PlanSelector] Plan ${plan.name} has invalid max_questions_per_day:`, plan.max_questions_per_day);
                     }
                     return `${chatCount} chats per day`;
                   })()}

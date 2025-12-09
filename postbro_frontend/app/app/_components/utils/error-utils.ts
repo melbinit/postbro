@@ -3,32 +3,107 @@
  */
 
 /**
- * Sanitize error messages to never show raw Python exceptions to users
+ * Sanitize error messages to never show raw Python exceptions, stack traces, or backend internals to users
  */
-export function sanitizeErrorMessage(message: string): string {
+export function sanitizeErrorMessage(message: string | null | undefined): string {
   if (!message) return 'Something went wrong. Please try again.'
   
-  // Never show raw Python exceptions
-  if (message.includes("'NoneType' object has no attribute")) {
-    return 'We had trouble processing the media. Please try again.'
-  }
-  if (message.includes('AttributeError')) {
+  const msg = String(message)
+  
+  // Never show stack traces
+  if (msg.includes('at ') && (msg.includes('.py:') || msg.includes('File "'))) {
     return 'Something went wrong on our end. Please try again.'
   }
-  if (message.includes('Unexpected error:')) {
-    // Extract the part after "Unexpected error:" and sanitize it
-    const parts = message.split('Unexpected error:')
+  
+  // Never show raw Python exceptions
+  const pythonExceptions = [
+    "'NoneType' object has no attribute",
+    "AttributeError",
+    "TypeError",
+    "KeyError",
+    "ValueError",
+    "IndexError",
+    "ImportError",
+    "ModuleNotFoundError",
+    "object has no attribute",
+    "Traceback (most recent call last)",
+    "File \"/",
+    "File \"C:\\",
+    "Exception:",
+    "Error:",
+    "raise ",
+  ]
+  
+  for (const pattern of pythonExceptions) {
+    if (msg.includes(pattern)) {
+      return 'Something went wrong on our end. Please try again.'
+    }
+  }
+  
+  // Never show internal file paths
+  if (msg.includes('/app/') || msg.includes('/usr/') || msg.includes('\\app\\') || msg.includes('postbro_backend/')) {
+    return 'Something went wrong on our end. Please try again.'
+  }
+  
+  // Never show database errors
+  if (msg.includes('psycopg2') || msg.includes('PostgreSQL') || msg.includes('database') || msg.includes('SQL')) {
+    return 'Something went wrong on our end. Please try again.'
+  }
+  
+  // Never show API keys or tokens (even partial)
+  if (msg.match(/[a-zA-Z0-9_-]{20,}/) && (msg.includes('key') || msg.includes('token') || msg.includes('secret'))) {
+    return 'Something went wrong on our end. Please try again.'
+  }
+  
+  // Never show Django/backend framework errors
+  if (msg.includes('Django') || msg.includes('settings.') || msg.includes('models.') || msg.includes('views.')) {
+    return 'Something went wrong on our end. Please try again.'
+  }
+  
+  // Never show internal error codes or IDs
+  if (msg.match(/error_code:\s*\d+/i) || msg.match(/error_id:\s*[a-f0-9-]{20,}/i)) {
+    return 'Something went wrong on our end. Please try again.'
+  }
+  
+  // Check for "Unexpected error:" prefix and sanitize the rest
+  if (msg.includes('Unexpected error:')) {
+    const parts = msg.split('Unexpected error:')
     if (parts.length > 1) {
       const errorPart = parts[1].trim()
-      // If it looks like a Python exception, replace it
-      if (errorPart.includes("'") || errorPart.includes('object has no attribute')) {
+      // If it looks like a technical error, replace it
+      if (errorPart.includes("'") || errorPart.includes('object has no attribute') || errorPart.includes('at ')) {
         return 'Something unexpected happened. Please try again.'
       }
     }
   }
   
   // If message already looks user-friendly, return as-is
-  return message
+  return msg
+}
+
+/**
+ * Extract safe error message from error object
+ * Never exposes backend internals, stack traces, or technical details
+ */
+export function getSafeErrorMessage(error: any): string {
+  // Handle different error formats
+  let message: string | null = null
+  
+  // Try to get user-friendly message from API response
+  if (error?.response?.data?.message) {
+    message = error.response.data.message
+  } else if (error?.response?.data?.error) {
+    message = error.response.data.error
+  } else if (error?.data?.message) {
+    message = error.data.message
+  } else if (error?.data?.error) {
+    message = error.data.error
+  } else if (error?.message) {
+    message = error.message
+  }
+  
+  // Always sanitize before returning
+  return sanitizeErrorMessage(message)
 }
 
 /**

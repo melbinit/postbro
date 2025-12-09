@@ -56,6 +56,26 @@ class MediaProcessor:
                 logger.error(f"Failed to initialize Supabase client: {e}")
                 self.supabase = None
     
+    def _get_error_message(self, e: subprocess.CalledProcessError) -> str:
+        """
+        Get error message from subprocess exception, handling both bytes and string stderr.
+        
+        When subprocess.run() is called with text=True, stderr is a string.
+        When text=False (default), stderr is bytes.
+        This helper handles both cases.
+        
+        Args:
+            e: subprocess.CalledProcessError exception
+            
+        Returns:
+            Error message as string
+        """
+        if e.stderr:
+            if isinstance(e.stderr, bytes):
+                return e.stderr.decode('utf-8', errors='ignore')
+            return str(e.stderr)
+        return str(e)
+    
     def should_upload_immediately(self, platform: str, media_type: str, source_url: str) -> bool:
         """
         Determine if media should be uploaded immediately or lazily.
@@ -429,7 +449,7 @@ class MediaProcessor:
             logger.error(f"FFmpeg timeout extracting frame at {time}s")
             return None
         except subprocess.CalledProcessError as e:
-            error_msg = e.stderr.decode() if e.stderr else str(e)
+            error_msg = self._get_error_message(e)
             logger.error(f"FFmpeg error extracting frame: {error_msg}")
             return None
     
@@ -784,7 +804,7 @@ class MediaProcessor:
             logger.warning(f"Timeout extracting audio from YouTube {video_id} (max {max_duration}s)")
             return None
         except subprocess.CalledProcessError as e:
-            error_msg = e.stderr.decode() if e.stderr else str(e)
+            error_msg = self._get_error_message(e)
             logger.warning(f"Error extracting audio from YouTube {video_id}: {error_msg[:200]}")
             return None
         except Exception as e:
@@ -851,7 +871,7 @@ class MediaProcessor:
             logger.warning(f"Timeout extracting audio from {video_url[:100]} (max {max_duration}s)")
             return None
         except subprocess.CalledProcessError as e:
-            error_msg = e.stderr.decode() if e.stderr else str(e)
+            error_msg = self._get_error_message(e)
             logger.warning(f"FFmpeg error extracting audio: {error_msg[:200]}")
             return None
         except Exception as e:

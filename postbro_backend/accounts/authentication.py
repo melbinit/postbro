@@ -72,16 +72,26 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                     email = decoded.get('email')
                     
                     if clerk_user_id:
-                        # Get user info from Clerk API
+                        # Get FULL user info from Clerk API (includes first_name/last_name)
                         user_data = clerk.get_user(clerk_user_id)
                         if user_data:
                             email = user_data.get('email_addresses', [{}])[0].get('email_address') if user_data.get('email_addresses') else email
                             email_verified = user_data.get('email_addresses', [{}])[0].get('verification', {}).get('status') == 'verified' if user_data.get('email_addresses') else False
                             
+                            # Extract first_name/last_name from Clerk user data
+                            first_name = user_data.get('first_name', '')
+                            last_name = user_data.get('last_name', '')
+                            full_name = f"{first_name} {last_name}".strip() if (first_name or last_name) else ''
+                            
                             user = self.get_or_create_user_from_clerk(
                                 clerk_user_id, 
                                 email, 
-                                {'email_verified': email_verified}
+                                {
+                                    'email_verified': email_verified,
+                                    'first_name': first_name,
+                                    'last_name': last_name,
+                                    'full_name': full_name
+                                }
                             )
                             return user
                 except jwt.InvalidTokenError:
@@ -97,6 +107,19 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             
             if not clerk_user_id:
                 return None
+            
+            # Fetch FULL user data from Clerk API to get first_name/last_name
+            user_data = clerk.get_user(clerk_user_id)
+            if user_data:
+                # Extract first_name/last_name from Clerk user data
+                first_name = user_data.get('first_name', '')
+                last_name = user_data.get('last_name', '')
+                full_name = f"{first_name} {last_name}".strip() if (first_name or last_name) else ''
+                
+                # Update session_data with name info
+                session_data['first_name'] = first_name
+                session_data['last_name'] = last_name
+                session_data['full_name'] = full_name
             
             # Get or create Django User from Clerk user
             user = self.get_or_create_user_from_clerk(clerk_user_id, email, session_data)
@@ -115,40 +138,56 @@ class ClerkAuthentication(authentication.BaseAuthentication):
         Syncs Clerk users with Django User model
         """
         try:
+            user = None
+            is_new_user = False
+            
+            # Extract name data from session_data
+            first_name = session_data.get('first_name', '')
+            last_name = session_data.get('last_name', '')
+            full_name = session_data.get('full_name', '') or (f"{first_name} {last_name}".strip() if (first_name or last_name) else '')
+            
             # Try to find user by clerk_user_id first
             try:
                 user = User.objects.get(clerk_user_id=clerk_user_id)
                 # Update email if changed
                 if email and user.email != email:
                     user.email = email
-                    user.email_verified = session_data.get('email_verified', False)
-                    user.save()
-                return user
+                user.email_verified = session_data.get('email_verified', False)
+                # Update name if provided and missing
+                if full_name and not user.full_name:
+                    user.full_name = full_name
+                user.save()
             except User.DoesNotExist:
                 pass
             
             # Fallback: try by email
-            if email:
+            if not user and email:
                 try:
                     user = User.objects.get(email=email)
                     # Update with clerk_user_id if missing
                     if not user.clerk_user_id:
                         user.clerk_user_id = clerk_user_id
-                        user.email_verified = session_data.get('email_verified', False)
-                        user.save()
-                    return user
+                    user.email_verified = session_data.get('email_verified', False)
+                    # Update name if provided and missing
+                    if full_name and not user.full_name:
+                        user.full_name = full_name
+                    user.save()
                 except User.DoesNotExist:
                     pass
             
             # User exists in Clerk but not in Django - create Django user
-            user = User.objects.create_user(
-                email=email or f"{clerk_user_id}@clerk.local",
-                clerk_user_id=clerk_user_id,
-                email_verified=session_data.get('email_verified', False),
-                is_active=True
-            )
+            if not user:
+                user = User.objects.create_user(
+                    email=email or f"{clerk_user_id}@clerk.local",
+                    clerk_user_id=clerk_user_id,
+                    email_verified=session_data.get('email_verified', False),
+                    full_name=full_name,
+                    is_active=True
+                )
+                is_new_user = True
             
-            # Auto-create Free subscription for new users created via Clerk auth
+            # ALWAYS ensure Free subscription exists (for both new and existing users)
+            # This handles cases where user was created but subscription wasn't
             self._ensure_free_subscription(user)
             
             return user

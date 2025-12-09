@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Check, Zap, Crown, Sparkles, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { logger } from "@/lib/logger"
 
 export function SubscriptionView() {
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null)
@@ -41,15 +42,9 @@ export function SubscriptionView() {
     // Refresh subscription after plan change
     try {
       const data = await plansApi.getCurrentSubscription()
-      console.log('🔄 [SubscriptionView] Refreshed subscription after plan change:', data)
-      console.log('🔄 [SubscriptionView] Downgrade info:', {
-        status: data?.status,
-        downgrade_to_plan: data?.downgrade_to_plan,
-        hasDowngrade: data?.status === 'canceling' && data?.downgrade_to_plan
-      })
       setCurrentSubscription(data)
     } catch (err) {
-      console.error('❌ [SubscriptionView] Failed to refresh subscription:', err)
+      logger.error('[SubscriptionView] Failed to refresh subscription:', err)
       // Ignore errors, subscription might not exist yet
     }
   }

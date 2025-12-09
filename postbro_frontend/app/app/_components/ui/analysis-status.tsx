@@ -3,6 +3,7 @@ import { Loader2, AlertCircle, Sparkles } from "lucide-react"
 import { PostCard } from "@/components/app/post-card"
 import { ChatMessages } from "@/components/app/chat-messages"
 import { sanitizeErrorMessage } from "../utils/error-utils"
+import { logger } from "@/lib/logger"
 
 interface AnalysisStatusProps {
   currentRequest: AnalysisRequest
@@ -75,21 +76,29 @@ export function AnalysisStatus({
 
       {/* Chat Messages */}
       {postAnalysisId && (latestStatus?.stage === 'analysis_complete' || currentRequest.status === 'completed') && (
-        <ChatMessages 
-          postAnalysisId={postAnalysisId}
-          scrollContainerRef={messagesContainerRef as React.RefObject<HTMLDivElement>}
-          onMessagesLoaded={(msgs) => {
-            console.log('📬 [AnalysisStatus] Messages loaded:', msgs.length)
-            setMessagesLoaded(true)
-            // Scroll is now handled by use-scroll-behavior hook
-            // Just dispatch the event for other listeners
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('chat-messages-loaded', {
-                detail: { postAnalysisId, hasMessages: msgs.length > 0, messageCount: msgs.length }
-              }))
-            }
-          }}
-        />
+        <div data-chat-section data-analysis-id={currentRequest.id}>
+          <ChatMessages 
+            postAnalysisId={postAnalysisId}
+            scrollContainerRef={messagesContainerRef as React.RefObject<HTMLDivElement>}
+            onMessagesLoaded={(msgs) => {
+              logger.debug('[AnalysisStatus] Messages loaded:', msgs.length)
+              setMessagesLoaded(true)
+              // Dispatch event with analysis ID and wasCompletedOnLoad status
+              if (typeof window !== 'undefined') {
+                const wasCompletedOnLoad = wasCompletedOnLoadRef.current.has(currentRequest.id)
+                window.dispatchEvent(new CustomEvent('chat-messages-loaded', {
+                  detail: { 
+                    postAnalysisId, 
+                    analysisId: currentRequest.id,
+                    hasMessages: msgs.length > 0, 
+                    messageCount: msgs.length,
+                    wasCompletedOnLoad
+                  }
+                }))
+              }
+            }}
+          />
+        </div>
       )}
 
       {/* PostBro status card - Show during processing */}

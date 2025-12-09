@@ -5,6 +5,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import { logger } from '@/lib/logger'
 
 export interface AnalysisStatus {
   id: string
@@ -37,7 +38,6 @@ export function useRealtimeStatus(analysisRequestId: string | null) {
     // Load existing status history FIRST (before subscribing) to catch any statuses already created
     const loadHistory = async () => {
       try {
-        console.log(`📥 [RealtimeStatus] Loading status history for ${analysisRequestId}`)
         const { data, error } = await supabase
           .from('analysis_analysisstatushistory')
           .select('*')
@@ -45,18 +45,17 @@ export function useRealtimeStatus(analysisRequestId: string | null) {
           .order('created_at', { ascending: true })
 
         if (error) {
-          console.error('❌ [RealtimeStatus] Error loading status history:', error)
+          logger.error('[RealtimeStatus] Error loading history:', error)
           return
         }
 
         if (data) {
-          console.log(`✅ [RealtimeStatus] Loaded ${data.length} status entries:`, data.map(s => s.stage))
+          logger.debug(`[RealtimeStatus] Loaded ${data.length} status entries`)
           setStatusHistory(data as AnalysisStatus[])
           
           // Check if social_data_fetched status exists in history and trigger username update
           const socialDataFetchedStatus = data.find((s: AnalysisStatus) => s.stage === 'social_data_fetched')
           if (socialDataFetchedStatus?.metadata?.username) {
-            console.log(`👤 [RealtimeStatus] Found social_data_fetched in history with username: ${socialDataFetchedStatus.metadata.username}`)
             // Dispatch event to update sidebar (will be handled by app-content.tsx)
             if (typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('analysis-username-updated', {
@@ -67,11 +66,9 @@ export function useRealtimeStatus(analysisRequestId: string | null) {
               }))
             }
           }
-        } else {
-          console.log(`⚠️ [RealtimeStatus] No status history found for ${analysisRequestId}`)
         }
       } catch (error) {
-        console.error('❌ [RealtimeStatus] Exception loading status history:', error)
+        logger.error('[RealtimeStatus] Exception loading history:', error)
       }
     }
 
@@ -93,7 +90,7 @@ export function useRealtimeStatus(analysisRequestId: string | null) {
         },
         (payload) => {
           const newStatus = payload.new as AnalysisStatus
-          console.log(`🔄 [RealtimeStatus] Received status update: ${newStatus.stage} - ${newStatus.message}`, newStatus.metadata)
+          logger.debug(`[RealtimeStatus] Status update: ${newStatus.stage}`)
           setStatusHistory((prev) => {
             // Avoid duplicates (can happen if status was created between history load and subscription)
             if (prev.some((s) => s.id === newStatus.id)) {
@@ -104,7 +101,6 @@ export function useRealtimeStatus(analysisRequestId: string | null) {
               (a, b) =>
                 new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             )
-            console.log(`✅ [RealtimeStatus] Status history updated: ${updated.length} entries (added ${newStatus.stage})`)
             return updated
           })
         }
@@ -112,13 +108,13 @@ export function useRealtimeStatus(analysisRequestId: string | null) {
       .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
           setIsConnected(true)
-          console.log(`✅ [RealtimeStatus] Subscribed to ${analysisRequestId}`)
+          logger.debug(`[RealtimeStatus] Subscribed: ${analysisRequestId}`)
         } else if (status === 'CHANNEL_ERROR' || err) {
           setIsConnected(false)
-          console.error('❌ [RealtimeStatus] Channel error:', err || status)
+          logger.error('[RealtimeStatus] Channel error:', err || status)
         } else if (status === 'TIMED_OUT') {
           setIsConnected(false)
-          console.error('❌ [RealtimeStatus] Subscription timed out')
+          logger.error('[RealtimeStatus] Subscription timed out')
         } else {
           setIsConnected(false)
         }

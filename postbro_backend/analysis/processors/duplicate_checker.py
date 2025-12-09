@@ -6,11 +6,19 @@ This enables fast path optimization (skip media processing, only update metrics)
 """
 
 import logging
+import re
 from typing import List, Dict, Optional
 from social.models import Post, Platform
 from social.services.url_parser import extract_post_id
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_string(value: str) -> str:
+    """Remove zero-width chars and trim whitespace."""
+    if not value:
+        return ''
+    return re.sub(r'[\u200b-\u200d\uFEFF\u2060]', '', value).strip()
 
 
 def check_existing_posts(urls: List[str], platform: str) -> Dict[str, Optional[Post]]:
@@ -44,7 +52,9 @@ def check_existing_posts(urls: List[str], platform: str) -> Dict[str, Optional[P
         platform_obj = Platform.objects.get(name=platform_name)
         
         for url in urls:
-            post_id = extract_post_id(url, platform)
+            clean_url = _normalize_string(url)
+            post_id = extract_post_id(clean_url, platform)
+            post_id = _normalize_string(post_id)
             if not post_id:
                 existing_posts[url] = None
                 logger.warning(f"⚠️ [DuplicateCheck] Could not extract post_id from URL: {url} (platform: {platform})")
@@ -53,7 +63,7 @@ def check_existing_posts(urls: List[str], platform: str) -> Dict[str, Optional[P
             try:
                 post = Post.objects.get(
                     platform=platform_obj,
-                    platform_post_id=post_id
+                    platform_post_id__iexact=post_id  # case-insensitive, normalized
                 )
                 existing_posts[url] = post
                 logger.info(f"✅ [DuplicateCheck] Found existing post for {url}: {post.id} (@{post.username})")

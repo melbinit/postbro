@@ -15,6 +15,7 @@ import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, CheckCircle2, XCircle, AlertCircle, Sparkles } from "lucide-react"
 import { toast } from "sonner"
+import { getSafeErrorMessage } from "@/app/app/_components/utils/error-utils"
 
 export default function AnalyzePage() {
   const router = useRouter()
@@ -88,7 +89,8 @@ export default function AnalyzePage() {
       
       return false
     } catch (error: any) {
-      toast.error(error.message || "Failed to start analysis")
+      const safeMessage = getSafeErrorMessage(error) || "Failed to start analysis"
+      toast.error(safeMessage)
       console.error("Analysis error:", error)
       setIsSubmitting(false)
       return false

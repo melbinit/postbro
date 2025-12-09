@@ -28,7 +28,7 @@ import { NotesButton } from "@/components/app/notes-button"
  */
 export function AppContent() {
   const pathname = usePathname()
-  const { isSignedIn, isLoaded } = useAuth()
+  const { isSignedIn, isLoaded, getToken } = useAuth()
   const [isMounted, setIsMounted] = useState(false)
   const [isNotesDrawerOpen, setIsNotesDrawerOpen] = useState(false)
   
@@ -68,6 +68,7 @@ export function AppContent() {
     analysisId,
     isLoaded: isLoaded || false,
     isSignedIn: isSignedIn || false,
+    getToken,
     latestStatus,
     state,
   })

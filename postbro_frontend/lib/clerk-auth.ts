@@ -3,6 +3,8 @@
  * Helper functions for working with Clerk in client components
  */
 
+import { logger } from './logger'
+
 /**
  * Get Clerk token for API requests
  * Use this in client components that have access to useAuth()
@@ -23,7 +25,7 @@ export async function getClerkTokenForApi(getToken: () => Promise<string | null>
   try {
     return await getToken()
   } catch (error) {
-    console.error('Error getting Clerk token:', error)
+    logger.error('Error getting Clerk token:', error)
     return null
   }
 }

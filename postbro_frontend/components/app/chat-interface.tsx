@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Send, AlertCircle, RefreshCw, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { getSafeErrorMessage } from "@/app/app/_components/utils/error-utils"
 
 interface ChatInterfaceProps {
   postAnalysisId: string
@@ -199,7 +200,7 @@ export function ChatInterface({ postAnalysisId, className }: ChatInterfaceProps)
         tempMessageIdRef.current = null
       }
       
-      const errorMessage = err.message || err.data?.message || "Failed to send message. Please try again."
+      const errorMessage = getSafeErrorMessage(err) || "Failed to send message. Please try again."
       setError(errorMessage)
       toast.error(errorMessage)
       

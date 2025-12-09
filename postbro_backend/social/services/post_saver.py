@@ -410,8 +410,8 @@ class PostSaver:
             logger.error(f"Full BrightData response: {data}")
             raise ValueError(f"Failed to scrape Instagram post: {error_msg}")
         
-        # Extract post ID (prefer post_id, fallback to shortcode)
-        post_id = data.get('post_id') or data.get('shortcode') or data.get('pk')
+        # Extract post ID (prefer shortcode/content_id, fallback to post_id/pk)
+        post_id = data.get('shortcode') or data.get('content_id') or data.get('post_id') or data.get('pk')
         if not post_id:
             # Log the full response to debug
             logger.error("Missing post_id, shortcode, or pk in Instagram data")
@@ -559,26 +559,54 @@ class PostSaver:
                         )
                         
                         # Save each frame as PostMedia with video_frame type + store bytes
-                        for j, (frame_url, frame_bytes) in enumerate(zip(frame_urls, frame_bytes_list)):
-                            frame_media = PostMedia.objects.create(
-                                post=post,
-                                media_type='video_frame',
-                                source_url=media_url,  # Store original video URL
-                                supabase_url=frame_url,
-                                uploaded_to_supabase=True,
-                            )
-                            # Store raw bytes in separate cache dict (survives refresh_from_db())
-                            if post.id not in self.media_bytes_cache:
-                                self.media_bytes_cache[post.id] = {}
-                            if frame_media.id not in self.media_bytes_cache[post.id]:
-                                self.media_bytes_cache[post.id][frame_media.id] = []
-                            self.media_bytes_cache[post.id][frame_media.id].append({
-                                'bytes': frame_bytes,
-                                'mime_type': 'image/jpeg',
-                                'media_type': 'video_frame'
-                            })
-                            logger.debug(f"Stored frame {j+1} bytes in cache ({len(frame_bytes)} bytes)")
-                        logger.info(f"Successfully processed {len(frame_urls)} frames for Instagram video (item {i})")
+                        # If frames already exist for this video, reuse them instead of creating duplicates
+                        existing_frames = post.media.filter(
+                            media_type='video_frame',
+                            source_url=media_url
+                        )
+
+                        if existing_frames.exists():
+                            logger.info(f"✅ [PostSaver] Frames already exist for video {media_url[:80]}..., reusing")
+                            for existing_frame in existing_frames:
+                                if post.id not in self.media_bytes_cache:
+                                    self.media_bytes_cache[post.id] = {}
+                                if existing_frame.supabase_url:
+                                    try:
+                                        import requests
+                                        response = requests.get(existing_frame.supabase_url, timeout=30)
+                                        response.raise_for_status()
+                                        frame_bytes = response.content
+                                        if existing_frame.id not in self.media_bytes_cache[post.id]:
+                                            self.media_bytes_cache[post.id][existing_frame.id] = []
+                                        self.media_bytes_cache[post.id][existing_frame.id].append({
+                                            'bytes': frame_bytes,
+                                            'mime_type': 'image/jpeg',
+                                            'media_type': 'video_frame'
+                                        })
+                                        logger.debug(f"Reused existing frame {existing_frame.id} ({len(frame_bytes)} bytes)")
+                                    except Exception as e:
+                                        logger.warning(f"⚠️ Failed to fetch existing frame bytes: {e}")
+                        else:
+                            for j, (frame_url, frame_bytes) in enumerate(zip(frame_urls, frame_bytes_list)):
+                                frame_media = PostMedia.objects.create(
+                                    post=post,
+                                    media_type='video_frame',
+                                    source_url=media_url,  # Store original video URL
+                                    supabase_url=frame_url,
+                                    uploaded_to_supabase=True,
+                                )
+                                # Store raw bytes in separate cache dict (survives refresh_from_db())
+                                if post.id not in self.media_bytes_cache:
+                                    self.media_bytes_cache[post.id] = {}
+                                if frame_media.id not in self.media_bytes_cache[post.id]:
+                                    self.media_bytes_cache[post.id][frame_media.id] = []
+                                self.media_bytes_cache[post.id][frame_media.id].append({
+                                    'bytes': frame_bytes,
+                                    'mime_type': 'image/jpeg',
+                                    'media_type': 'video_frame'
+                                })
+                                logger.debug(f"Stored frame {j+1} bytes in cache ({len(frame_bytes)} bytes)")
+                            logger.info(f"Successfully processed {len(frame_urls)} frames for Instagram video (item {i})")
                         
                         # Create or get PostMedia entry for the video itself (to store transcript)
                         video_media, video_created = PostMedia.objects.get_or_create(
@@ -685,25 +713,52 @@ class PostSaver:
                     )
                     
                     # Save each frame as PostMedia with video_frame type + store bytes
-                    for j, (frame_url, frame_bytes) in enumerate(zip(frame_urls, frame_bytes_list)):
-                        frame_media = PostMedia.objects.create(
-                            post=post,
-                            media_type='video_frame',
-                            source_url=video_url,
-                            supabase_url=frame_url,
-                            uploaded_to_supabase=True,
-                        )
-                        # Store raw bytes on Post object for Gemini (persists across DB queries)
-                        if not hasattr(post, '_media_bytes_cache'):
-                            post._media_bytes_cache = {}
-                        if frame_media.id not in post._media_bytes_cache:
-                            post._media_bytes_cache[frame_media.id] = []
-                        post._media_bytes_cache[frame_media.id].append({
-                            'bytes': frame_bytes,
-                            'mime_type': 'image/jpeg',
-                            'media_type': 'video_frame'
-                        })
-                    logger.info(f"Successfully processed {len(frame_urls)} frames for Instagram video from videos array")
+                    # Reuse existing frames if they already exist for this video URL
+                    existing_frames = post.media.filter(
+                        media_type='video_frame',
+                        source_url=video_url
+                    )
+
+                    if existing_frames.exists():
+                        logger.info(f"✅ [PostSaver] Frames already exist for Instagram video {video_url[:80]}..., reusing")
+                        for existing_frame in existing_frames:
+                            if not hasattr(post, '_media_bytes_cache'):
+                                post._media_bytes_cache = {}
+                            if existing_frame.supabase_url:
+                                try:
+                                    import requests
+                                    response = requests.get(existing_frame.supabase_url, timeout=30)
+                                    response.raise_for_status()
+                                    frame_bytes = response.content
+                                    if existing_frame.id not in post._media_bytes_cache:
+                                        post._media_bytes_cache[existing_frame.id] = []
+                                    post._media_bytes_cache[existing_frame.id].append({
+                                        'bytes': frame_bytes,
+                                        'mime_type': 'image/jpeg',
+                                        'media_type': 'video_frame'
+                                    })
+                                except Exception as e:
+                                    logger.warning(f"⚠️ Failed to fetch existing frame bytes: {e}")
+                    else:
+                        for j, (frame_url, frame_bytes) in enumerate(zip(frame_urls, frame_bytes_list)):
+                            frame_media = PostMedia.objects.create(
+                                post=post,
+                                media_type='video_frame',
+                                source_url=video_url,
+                                supabase_url=frame_url,
+                                uploaded_to_supabase=True,
+                            )
+                            # Store raw bytes on Post object for Gemini (persists across DB queries)
+                            if not hasattr(post, '_media_bytes_cache'):
+                                post._media_bytes_cache = {}
+                            if frame_media.id not in post._media_bytes_cache:
+                                post._media_bytes_cache[frame_media.id] = []
+                            post._media_bytes_cache[frame_media.id].append({
+                                'bytes': frame_bytes,
+                                'mime_type': 'image/jpeg',
+                                'media_type': 'video_frame'
+                            })
+                        logger.info(f"Successfully processed {len(frame_urls)} frames for Instagram video from videos array")
                     
                 except Exception as e:
                     logger.error(
@@ -1128,23 +1183,48 @@ class PostSaver:
                         )
                         
                         # Save frame URLs + store bytes
-                        for j, (frame_url, frame_bytes) in enumerate(zip(frame_urls, frame_bytes_list)):
-                            frame_media = PostMedia.objects.create(
-                                post=post,
-                                media_type='video_frame',
-                                source_url=video_url,  # Store actual video URL, not thumbnail
-                                supabase_url=frame_url,
-                                uploaded_to_supabase=True,
-                            )
-                            # Store raw bytes in memory for Gemini
-                            if not hasattr(frame_media, '_bytes_cache'):
-                                frame_media._bytes_cache = []
-                            frame_media._bytes_cache.append({
-                                'bytes': frame_bytes,
-                                'mime_type': 'image/jpeg',
-                                'media_type': 'video_frame'
-                            })
-                        logger.info(f"Successfully processed {len(frame_urls)} frames for Twitter video")
+                        # Reuse existing frames if they already exist for this video URL
+                        existing_frames = post.media.filter(
+                            media_type='video_frame',
+                            source_url=video_url
+                        )
+
+                        if existing_frames.exists():
+                            logger.info(f"✅ [PostSaver] Frames already exist for Twitter video {video_url[:80]}..., reusing")
+                            for existing_frame in existing_frames:
+                                if not hasattr(existing_frame, '_bytes_cache'):
+                                    existing_frame._bytes_cache = []
+                                if existing_frame.supabase_url:
+                                    try:
+                                        import requests
+                                        response = requests.get(existing_frame.supabase_url, timeout=30)
+                                        response.raise_for_status()
+                                        frame_bytes = response.content
+                                        existing_frame._bytes_cache.append({
+                                            'bytes': frame_bytes,
+                                            'mime_type': 'image/jpeg',
+                                            'media_type': 'video_frame'
+                                        })
+                                    except Exception as e:
+                                        logger.warning(f"⚠️ Failed to fetch existing frame bytes: {e}")
+                        else:
+                            for j, (frame_url, frame_bytes) in enumerate(zip(frame_urls, frame_bytes_list)):
+                                frame_media = PostMedia.objects.create(
+                                    post=post,
+                                    media_type='video_frame',
+                                    source_url=video_url,  # Store actual video URL, not thumbnail
+                                    supabase_url=frame_url,
+                                    uploaded_to_supabase=True,
+                                )
+                                # Store raw bytes in memory for Gemini
+                                if not hasattr(frame_media, '_bytes_cache'):
+                                    frame_media._bytes_cache = []
+                                frame_media._bytes_cache.append({
+                                    'bytes': frame_bytes,
+                                    'mime_type': 'image/jpeg',
+                                    'media_type': 'video_frame'
+                                })
+                            logger.info(f"Successfully processed {len(frame_urls)} frames for Twitter video")
                         
                         # Create or get PostMedia entry for the video itself (to store transcript)
                         video_media, video_created = PostMedia.objects.get_or_create(

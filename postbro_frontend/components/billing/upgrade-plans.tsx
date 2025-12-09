@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { logger } from "@/lib/logger"
 
 export function UpgradePlans() {
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null)
@@ -40,15 +41,9 @@ export function UpgradePlans() {
     // Refresh subscription after plan change
     try {
       const data = await plansApi.getCurrentSubscription()
-      console.log('🔄 [UpgradePlans] Refreshed subscription after plan change:', data)
-      console.log('🔄 [UpgradePlans] Downgrade info:', {
-        status: data?.status,
-        downgrade_to_plan: data?.downgrade_to_plan,
-        hasDowngrade: data?.status === 'canceling' && data?.downgrade_to_plan
-      })
       setCurrentSubscription(data)
     } catch (err) {
-      console.error('❌ [UpgradePlans] Failed to refresh subscription:', err)
+      logger.error('[UpgradePlans] Failed to refresh subscription:', err)
       // Ignore errors, subscription might not exist yet
     }
   }

@@ -81,6 +81,7 @@ export function InputArea({
               </div>
               <AnalysisForm 
                 key={`analysis-form-retry-${currentRequest.id}`}
+                currentRequest={currentRequest}
                 initialValues={{
                   platform: currentRequest.platform,
                   post_urls: currentRequest.post_urls,

@@ -19,6 +19,7 @@ from .utils import (
     estimate_cost,
     handle_analysis_error,
 )
+from accounts.utils import increment_usage
 from social.services.url_parser import detect_platform_from_url
 from analysis.processors.social_collector import collect_social_posts
 from analysis.processors.post_linker import verify_and_relink_posts
@@ -350,6 +351,14 @@ def process_analysis_request(self, analysis_request_id: str):
             analysis_request.save(update_fields=['status', 'completed_at', 'duration_seconds', 'total_api_calls', 'posts_processed'])
             logger.info(f"✅ Updated analysis {analysis_request.id} status to completed "
                        f"(duration: {duration:.2f}s, API calls: {total_api_calls}, posts: {succeeded_count})")
+            
+            # Increment usage only after successful completion (not on retries)
+            # Retries should not increment usage as they're the same analysis being retried
+            if analysis_request.retry_count == 0:
+                increment_usage(analysis_request.user, analysis_request.platform, 'url_lookups')
+                logger.info(f"📊 [Analysis] Incremented usage for user {analysis_request.user.id} after successful completion")
+            else:
+                logger.info(f"📊 [Analysis] Skipping usage increment for retry (retry_count: {analysis_request.retry_count})")
             
             logger.info(
                 f"Completed analysis request {analysis_request_id}: "
@@ -720,6 +729,14 @@ def process_analysis_request(self, analysis_request_id: str):
             analysis_request.save(update_fields=['status', 'completed_at', 'duration_seconds', 'total_api_calls', 'posts_processed'])
             logger.info(f"✅ Updated analysis {analysis_request.id} status to completed "
                        f"(duration: {duration:.2f}s, API calls: {total_api_calls}, posts: {succeeded_count})")
+            
+            # Increment usage only after successful completion (not on retries)
+            # Retries should not increment usage as they're the same analysis being retried
+            if analysis_request.retry_count == 0:
+                increment_usage(analysis_request.user, analysis_request.platform, 'url_lookups')
+                logger.info(f"📊 [Analysis] Incremented usage for user {analysis_request.user.id} after successful completion")
+            else:
+                logger.info(f"📊 [Analysis] Skipping usage increment for retry (retry_count: {analysis_request.retry_count})")
             
             logger.info(
                 f"Completed analysis request {analysis_request_id}: "

@@ -4,6 +4,7 @@
  */
 
 import { userCache } from './storage'
+import { logger } from './logger'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
 
@@ -24,7 +25,7 @@ async function getClerkToken(): Promise<string | null> {
       const token = await globalGetToken()
       if (token) return token
     } catch (error) {
-      console.warn('Failed to get token from global getter:', error)
+      logger.warn('Failed to get token from global getter:', error)
     }
   }
   
@@ -203,32 +204,24 @@ async function apiRequest<T>(
 
   if (token && !endpoint.includes('/signup') && !endpoint.includes('/login')) {
     headers['Authorization'] = `Bearer ${token}`
-    console.log(`🔑 [apiRequest] ${endpoint} - Adding Authorization header (token length: ${token.length})`)
+    logger.debug(`[API] ${endpoint} - Auth header added`)
   } else if (!endpoint.includes('/signup') && !endpoint.includes('/login')) {
-    console.warn(`⚠️ [apiRequest] ${endpoint} - No token available for authenticated endpoint`)
+    logger.warn(`[API] ${endpoint} - No token available`)
   }
 
   const url = `${API_BASE_URL}${endpoint}`
-  const callTime = Date.now()
-  const callTimeISO = new Date().toISOString()
-  console.log(`🌐 [apiRequest] Starting ${endpoint} at ${callTimeISO} (${callTime})`)
-  
-  const fetchStartTime = performance.now()
-  const fetchStartTimeDate = Date.now()
-  console.log(`🌐 [apiRequest] ${endpoint} - About to call fetch() at ${fetchStartTimeDate} (${fetchStartTime.toFixed(2)}ms)`)
   
   const response = await fetch(url, {
     ...options,
     headers,
   })
   
-  const fetchEndTime = performance.now()
-  const fetchEndTimeDate = Date.now()
-  console.log(`🌐 [apiRequest] ${endpoint} - fetch() completed in ${(fetchEndTime - fetchStartTime).toFixed(2)}ms (wall time: ${fetchEndTimeDate - fetchStartTimeDate}ms), status: ${response.status}`)
+  const fetchTime = Date.now() - requestStartTime
+  logger.debug(`[API] ${endpoint} - ${response.status} (${fetchTime}ms)`)
 
   if (!response.ok) {
     const errorData: ApiError = await response.json().catch(() => ({}))
-    console.error(`🌐 [apiRequest] ${endpoint} - Error ${response.status}:`, errorData)
+    logger.error(`[API] ${endpoint} - ${response.status}:`, errorData)
     
     // Handle authentication errors globally (401 Unauthorized, 403 Forbidden)
     // This handles cases where the token expires or becomes invalid during a session
@@ -243,7 +236,7 @@ async function apiRequest<T>(
           // Set flag immediately to prevent multiple redirects from concurrent API calls
           isRedirectingToLogin = true
           
-          console.warn(`🔒 [apiRequest] Auth error (${response.status}) - token expired or invalid, redirecting to login`)
+          logger.warn(`[API] Auth error (${response.status}) - redirecting to login`)
           
           // Use setTimeout to ensure this happens after current execution context
           // This prevents race conditions with component-level checks
@@ -273,21 +266,10 @@ async function apiRequest<T>(
     throw error
   }
 
-  const jsonStartTime = Date.now()
   const data = await response.json()
+  const totalTime = Date.now() - requestStartTime
   
-  // Debug: Log plans API response structure
-  if (endpoint.includes('/accounts/plans/')) {
-    console.log('🔍 [apiRequest] Plans API response structure:', {
-      hasPlans: 'plans' in data,
-      plansCount: data.plans?.length || 0,
-      firstPlanKeys: data.plans?.[0] ? Object.keys(data.plans[0]) : [],
-      firstPlanMaxQuestions: data.plans?.[0]?.max_questions_per_day,
-      fullResponse: data
-    })
-  }
-  
-  console.log(`🌐 [apiRequest] ${endpoint} - Total time: ${Date.now() - requestStartTime}ms (json parse: ${Date.now() - jsonStartTime}ms)`)
+  logger.debug(`[API] ${endpoint} - Complete (${totalTime}ms)`)
   return data
 }
 
@@ -658,6 +640,17 @@ export const analysisApi = {
   }> => {
     return apiRequest(`/analysis/requests/${requestId}/status-history/`)
   },
+
+  retryAnalysis: async (requestId: string): Promise<AnalysisRequest> => {
+    const response = await apiRequest<{
+      message: string
+      analysis_request: AnalysisRequest
+      retry_count: number
+    }>(`/analysis/requests/${requestId}/retry/`, {
+      method: 'POST',
+    })
+    return response.analysis_request
+  },
 }
 
 // Social/Posts API
@@ -761,8 +754,7 @@ export const chatApi = {
   ): AsyncGenerator<string, void, unknown> {
     const url = `${API_BASE_URL}/analysis/chat/sessions/${sessionId}/messages/stream/`
     
-    console.log('🚀 [streamMessage] Starting stream request to:', url)
-    console.log('📤 [streamMessage] Message:', message.substring(0, 50) + '...')
+    logger.debug(`[Stream] Starting: ${sessionId}`)
     
     // Get auth token (same way as apiRequest)
     const token = await getClerkToken() || tokenManager.getAccessToken()
@@ -773,19 +765,17 @@ export const chatApi = {
     
     if (token) {
       headers['Authorization'] = `Bearer ${token}`
-      console.log('🔑 [streamMessage] Token found, length:', token.length)
     } else {
-      console.warn('⚠️ [streamMessage] No token available')
+      logger.warn('[Stream] No token available')
     }
     
-    console.log('📡 [streamMessage] Sending fetch request...')
     const response = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify({ message }),
     })
     
-    console.log('📥 [streamMessage] Response status:', response.status, response.statusText)
+    logger.debug(`[Stream] Response: ${response.status}`)
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -831,13 +821,12 @@ export const chatApi = {
               const data = JSON.parse(line.slice(6))
               
               if (data.type === 'chunk' && data.chunk) {
-                console.log('📥 [streamMessage] Received chunk:', data.chunk.substring(0, 50) + '...')
                 // Yield chunk to caller
                 yield data.chunk
                 // Also call callback if provided
                 onChunk?.(data.chunk)
               } else if (data.type === 'done' && data.done) {
-                console.log('✅ [streamMessage] Stream complete, message_id:', data.message_id)
+                logger.debug(`[Stream] Complete: ${data.message_id}`)
                 // Stream complete
                 onDone?.({
                   message_id: data.message_id,
@@ -845,14 +834,14 @@ export const chatApi = {
                 })
                 return
               } else if (data.type === 'error' && data.error) {
-                console.error('❌ [streamMessage] Stream error:', data.error)
+                logger.error('[Stream] Error:', data.error)
                 // Error occurred
                 onError?.(data.error)
                 throw new Error(data.error)
               }
             } catch (parseError) {
               // Skip invalid JSON lines
-              console.warn('⚠️ [streamMessage] Failed to parse SSE data:', line, parseError)
+              logger.warn('[Stream] Parse error:', parseError)
             }
           }
         }

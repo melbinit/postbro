@@ -5,6 +5,7 @@ import { profileApi, analysisApi, type User, type AnalysisRequest } from "@/lib/
 import { userCache } from "@/lib/storage"
 import { useRealtimeAnalyses } from "@/hooks/use-realtime-analyses"
 import { useAuth } from "@clerk/nextjs"
+import { logger } from "@/lib/logger"
 
 interface AppContextType {
   user: User | null
@@ -37,67 +38,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isLoadingUserRef = useRef(false) // Prevent duplicate calls
   const isLoadingAnalysesRef = useRef(false) // Prevent duplicate calls
   
-  // Get Clerk auth for token access
-  const { getToken, isSignedIn } = useAuth()
+  // Get Clerk auth for token access - CRITICAL: Check isLoaded for signup redirects
+  const { getToken, isSignedIn, isLoaded } = useAuth()
 
   // Set up Clerk token getter for API client
   useEffect(() => {
-    if (typeof window !== 'undefined' && getToken) {
+    if (typeof window !== 'undefined' && getToken && isLoaded) {
       (window as any).__clerkGetToken = getToken
-      console.log('✅ [AppContext] Clerk token getter set up')
+      logger.debug('[AppContext] Token getter set up')
     }
-  }, [getToken])
+  }, [getToken, isLoaded])
 
   // Mark as mounted on client (prevents hydration mismatch)
   useEffect(() => {
-    console.log('🔵 [AppContext] Setting isMounted to true')
     setIsMounted(true)
   }, [])
 
   // Load user profile - simple cache (username rarely changes)
   const loadUser = async () => {
-    console.log('👤 [loadUser] Called', { isLoadingUserRef: isLoadingUserRef.current, hasLoadedUser, hasUser: !!user, isMounted })
-    
     // Prevent duplicate calls
     if (isLoadingUserRef.current) {
-      console.log('👤 [loadUser] Already loading, skipping')
       return
     }
     if (hasLoadedUser && user) {
-      console.log('👤 [loadUser] Already loaded, skipping')
       return // Already loaded
     }
     
     // Only check cache on client side (after mount)
     if (isMounted) {
-      console.log('👤 [loadUser] Checking cache...')
       const cached = userCache.get()
       if (cached) {
-        console.log('👤 [loadUser] Found cache, using it')
+        logger.debug('[AppContext] Using cached user')
         setUser(cached)
         setHasLoadedUser(true)
         setIsLoadingUser(false)
         // Don't fetch if cache is fresh (< 30 min) - username rarely changes
         return
       }
-      console.log('👤 [loadUser] No cache found')
-    } else {
-      console.log('👤 [loadUser] Not mounted yet, skipping cache check')
     }
     
     // No cache or expired - fetch fresh
     try {
-      console.log('👤 [loadUser] Fetching from API...')
       isLoadingUserRef.current = true
       setIsLoadingUser(true)
-      const startTime = Date.now()
       const data = await profileApi.getProfile()
-      console.log(`👤 [loadUser] API call took ${Date.now() - startTime}ms`)
       setUser(data)
       userCache.set(data)
       setHasLoadedUser(true)
     } catch (error) {
-      console.error('👤 [loadUser] Failed to fetch profile:', error)
+      logger.error('[AppContext] Failed to fetch profile:', error)
       // Keep cached data on error if available
       const fallbackCache = userCache.get()
       if (fallbackCache) {
@@ -112,15 +101,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Load initial batch of analyses (first 15) - with backend pagination
   const loadAnalyses = async () => {
-    console.log('📊 [loadAnalyses] Called', { isLoadingAnalysesRef: isLoadingAnalysesRef.current, hasLoadedAnalyses, isMounted })
-    
     // Prevent duplicate calls
     if (isLoadingAnalysesRef.current) {
-      console.log('📊 [loadAnalyses] Already loading, skipping')
       return
     }
     if (hasLoadedAnalyses) {
-      console.log('📊 [loadAnalyses] Already loaded, skipping')
       return // Already loaded (even if empty)
     }
     
@@ -131,21 +116,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Use a separate async function to avoid blocking
     const fetchData = async () => {
       try {
-        console.log('📊 [loadAnalyses] Starting API call...')
         setIsLoadingAnalyses(true) // Set loading state
-        const startTime = Date.now()
         const data = await analysisApi.getAnalysisRequests({
           limit: INITIAL_ANALYSES_LIMIT,
           offset: 0
         })
-        console.log(`📊 [loadAnalyses] API call took ${Date.now() - startTime}ms`)
         
         setAnalyses(data.requests || [])
         setAnalysesOffset(INITIAL_ANALYSES_LIMIT)
         setHasMoreAnalyses(data.has_more || false)
         setHasLoadedAnalyses(true)
       } catch (error) {
-        console.error('📊 [loadAnalyses] Failed to fetch analyses:', error)
+        logger.error('[AppContext] Failed to fetch analyses:', error)
         setHasLoadedAnalyses(true) // Mark as loaded even on error
       } finally {
         setIsLoadingAnalyses(false)
@@ -176,7 +158,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setHasMoreAnalyses(false)
       }
     } catch (error) {
-      console.error('Failed to load more analyses:', error)
+      logger.error('[AppContext] Failed to load more analyses:', error)
     } finally {
       setIsLoadingMoreAnalyses(false)
     }
@@ -194,7 +176,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setAnalysesOffset(INITIAL_ANALYSES_LIMIT)
       setHasMoreAnalyses(data.has_more || false)
     } catch (error) {
-      console.error('Failed to refresh analyses:', error)
+      logger.error('[AppContext] Failed to refresh analyses:', error)
     }
   }
 
@@ -206,7 +188,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUser(data)
       userCache.set(data) // Update cache with fresh data
     } catch (error) {
-      console.error('Failed to refresh user:', error)
+      logger.error('[AppContext] Failed to refresh user:', error)
     }
   }
 
@@ -224,17 +206,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Update analysis username in the cached list (ChatGPT-like behavior)
   const updateAnalysisUsername = useCallback((analysisId: string, username: string) => {
-    console.log(`👤 [AppContext] updateAnalysisUsername called: ${analysisId} -> ${username}`)
+    logger.debug(`[AppContext] Updating username: ${analysisId} -> ${username}`)
     setAnalyses((prev) => {
       const updated = prev.map((analysis) => {
         if (analysis.id === analysisId) {
-          console.log(`✅ [AppContext] Updating analysis ${analysisId}: ${analysis.display_name || analysis.username} -> ${username}`)
           // Update both username (input) and display_name (derived)
           return { ...analysis, username: username, display_name: username }
         }
         return analysis
       })
-      console.log(`📊 [AppContext] Updated analyses list, count: ${updated.length}`)
       return updated
     })
   }, [])
@@ -248,30 +228,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   )
 
   // Load data immediately on mount - only once (after client-side mount)
-  // Also wait for Clerk to be ready if user is signed in
+  // CRITICAL: Wait for Clerk to be fully loaded (especially after signup redirects)
   useEffect(() => {
-    console.log('🚀 [AppContext] useEffect triggered', { isMounted, hasLoadedUser, hasLoadedAnalyses, isSignedIn })
-    
     if (!isMounted) {
-      console.log('🚀 [AppContext] Not mounted yet, waiting...')
       return // Wait for client-side mount to prevent hydration issues
     }
     
-    // If user is signed in, wait a bit for Clerk token to be available
-    if (isSignedIn && !getToken) {
-      console.log('🚀 [AppContext] Waiting for Clerk token getter...')
+    // Wait for Clerk to be fully loaded - this is critical after signup/email verification redirects
+    // Without this, API calls happen before the token is available, causing 403 errors
+    if (!isLoaded) {
+      logger.debug('[AppContext] Waiting for Clerk to load...')
       return
     }
     
-    console.log('🚀 [AppContext] Mounted! Starting data load...')
-    const startTime = Date.now()
+    // If user is signed in, ensure token getter is available
+    if (isSignedIn && !getToken) {
+      logger.debug('[AppContext] Waiting for token getter...')
+      return
+    }
     
     // Fire both immediately in parallel - don't wait
     loadAnalyses() // Start this immediately
     loadUser() // This can use cache, won't block
-    
-    console.log(`🚀 [AppContext] Data load functions called in ${Date.now() - startTime}ms`)
-  }, [isMounted, isSignedIn, getToken]) // Run once after mount and when Clerk is ready
+  }, [isMounted, isSignedIn, isLoaded, getToken]) // Added isLoaded - critical for signup flow
 
   // Set up event listeners separately (don't reload data when these change)
   useEffect(() => {

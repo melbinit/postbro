@@ -286,12 +286,13 @@ class BrightDataScraper:
         
         return result
     
-    def scrape_instagram_posts(self, urls: List[str]) -> List[Dict]:
+    def scrape_instagram_posts(self, urls: List[str], analysis_request_id: Optional[str] = None) -> List[Dict]:
         """
         Scrape multiple Instagram posts.
         
         Args:
             urls: List of Instagram post URLs
+            analysis_request_id: Optional analysis request ID for logging
             
         Returns:
             List of dictionaries containing post data or error information
