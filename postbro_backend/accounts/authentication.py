@@ -186,57 +186,11 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                 )
                 is_new_user = True
             
-            # ALWAYS ensure Free subscription exists (for both new and existing users)
-            # This handles cases where user was created but subscription wasn't
-            self._ensure_free_subscription(user)
-            
             return user
             
         except Exception as e:
             logger.error(f"Error syncing user: {str(e)}")
             raise AuthenticationFailed(f'Failed to sync user: {str(e)}')
     
-    def _ensure_free_subscription(self, user: User) -> None:
-        """
-        Ensure user has an active Free subscription.
-        Called when a new user is created via Clerk authentication.
-        """
-        try:
-            from .models import Plan, Subscription
-            
-            free_plan = Plan.objects.get(name='Free', is_active=True)
-            subscription, created = Subscription.objects.get_or_create(
-                user=user,
-                plan=free_plan,
-                defaults={
-                    'status': Subscription.Status.ACTIVE,
-                    'start_date': timezone.now()
-                }
-            )
-            
-            if created:
-                logger.info(f"✅ [ClerkAuth] Created Free subscription for new user {user.id} (email: {user.email})")
-            else:
-                # Subscription already exists - ensure it's active
-                if subscription.status != Subscription.Status.ACTIVE:
-                    logger.warning(
-                        f"⚠️ [ClerkAuth] Existing subscription for user {user.id} has status {subscription.status}, "
-                        f"updating to ACTIVE"
-                    )
-                    subscription.status = Subscription.Status.ACTIVE
-                    subscription.start_date = timezone.now()
-                    subscription.save()
-                else:
-                    logger.debug(f"✅ [ClerkAuth] User {user.id} already has active Free subscription")
-                    
-        except Plan.DoesNotExist:
-            logger.error(
-                f"❌ [ClerkAuth] Free plan not found in database - subscription not created for user {user.id}"
-            )
-        except Exception as e:
-            logger.error(
-                f"❌ [ClerkAuth] Failed to create Free subscription for user {user.id}: {str(e)}",
-                exc_info=True
-            )
-            # Don't raise - authentication should succeed even if subscription creation fails
+    # Note: Free subscription assignment is now handled in a post_save signal on User creation.
 
