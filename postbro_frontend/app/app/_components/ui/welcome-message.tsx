@@ -12,10 +12,10 @@ export function WelcomeMessage() {
       <div className="flex-1 space-y-2">
         <div className="bg-card/60 backdrop-blur-sm rounded-2xl rounded-tl-sm p-4 border border-border/30">
           <p className="text-sm text-foreground">
-            Hey! I'm PostBro. I can analyze any Instagram or X post to help you understand what makes content go viral.
+            Hey! I'm PostBro. I can analyze any Instagram, X, or YouTube post to help you understand what makes content go viral.
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            Share a username or post URL to get started.
+            Share a post URL to get started.
           </p>
         </div>
       </div>
