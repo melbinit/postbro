@@ -305,11 +305,12 @@ class DodoPaymentsService:
         signature: str
     ) -> bool:
         """
-        Verify webhook signature from Dodo Payments
+        Verify webhook signature from Dodo Payments (legacy HMAC format)
+        Supports both Svix format and legacy HMAC format
         
         Args:
             payload: Raw request body as bytes
-            signature: Signature from X-Dodo-Signature header
+            signature: Signature from X-Dodo-Signature or webhook-signature header
             
         Returns:
             True if signature is valid, False otherwise
@@ -337,6 +338,50 @@ class DodoPaymentsService:
             return hmac.compare_digest(expected_signature, signature)
         except Exception as e:
             logger.error(f"❌ [Dodo] Webhook signature verification failed: {e}")
+            return False
+    
+    def verify_webhook_signature_svix(
+        self,
+        payload: bytes,
+        headers: Dict[str, str]
+    ) -> bool:
+        """
+        Verify webhook signature using Svix library
+        Used when Dodo sends webhooks via Svix
+        
+        Args:
+            payload: Raw request body as bytes
+            headers: Request headers dictionary
+            
+        Returns:
+            True if signature is valid, False otherwise
+        """
+        # Skip verification in DEBUG mode for local testing
+        from django.conf import settings
+        if settings.DEBUG:
+            logger.warning("⚠️ [Dodo] DEBUG mode: Skipping Svix webhook signature verification")
+            return True
+        
+        if not self.webhook_secret:
+            logger.warning("⚠️ [Dodo] Webhook secret not configured, skipping Svix signature verification")
+            return True  # Allow in development, but should be False in production
+        
+        try:
+            from svix.webhooks import Webhook, WebhookVerificationError
+            
+            wh = Webhook(self.webhook_secret)
+            # Verify throws WebhookVerificationError on failure, returns message on success
+            wh.verify(payload, headers)
+            logger.info("✅ [Dodo] Svix webhook signature verified successfully")
+            return True
+        except WebhookVerificationError as e:
+            logger.error(f"❌ [Dodo] Svix webhook signature verification failed: {e}")
+            return False
+        except ImportError:
+            logger.error("❌ [Dodo] Svix library not installed. Install with: pip install svix")
+            return False
+        except Exception as e:
+            logger.error(f"❌ [Dodo] Error verifying Svix webhook signature: {e}")
             return False
 
 

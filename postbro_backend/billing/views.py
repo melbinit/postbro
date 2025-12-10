@@ -567,13 +567,26 @@ def dodo_webhook(request):
     try:
         # Get raw payload for signature verification
         payload = request.body
-        signature = request.headers.get('X-Dodo-Signature', '') or request.headers.get('webhook-signature', '')
+        
+        # Check if this is a Svix webhook (Dodo uses Svix for webhook delivery)
+        svix_signature = request.headers.get('svix-signature', '')
         
         # Verify webhook signature
         dodo_service = get_dodo_service()
-        if not dodo_service.verify_webhook_signature(payload, signature):
-            logger.warning(f"⚠️ [Dodo Webhook] Invalid signature")
-            return HttpResponse('Invalid signature', status=401)
+        
+        if svix_signature:
+            # Use Svix verification if svix-signature header is present
+            # Convert Django HttpRequest headers to dict for Svix library
+            headers_dict = dict(request.headers)
+            if not dodo_service.verify_webhook_signature_svix(payload, headers_dict):
+                logger.warning(f"⚠️ [Dodo Webhook] Invalid Svix signature")
+                return HttpResponse('Invalid signature', status=401)
+        else:
+            # Use legacy HMAC verification for non-Svix webhooks
+            signature = request.headers.get('X-Dodo-Signature', '') or request.headers.get('webhook-signature', '')
+            if not dodo_service.verify_webhook_signature(payload, signature):
+                logger.warning(f"⚠️ [Dodo Webhook] Invalid signature")
+                return HttpResponse('Invalid signature', status=401)
         
         # Parse event data
         event_data = json.loads(payload.decode('utf-8'))
@@ -1172,13 +1185,26 @@ def dodo_webhook(request):
     try:
         # Get raw payload for signature verification
         payload = request.body
-        signature = request.headers.get('X-Dodo-Signature', '') or request.headers.get('webhook-signature', '')
+        
+        # Check if this is a Svix webhook (Dodo uses Svix for webhook delivery)
+        svix_signature = request.headers.get('svix-signature', '')
         
         # Verify webhook signature
         dodo_service = get_dodo_service()
-        if not dodo_service.verify_webhook_signature(payload, signature):
-            logger.warning(f"⚠️ [Dodo Webhook] Invalid signature")
-            return HttpResponse('Invalid signature', status=401)
+        
+        if svix_signature:
+            # Use Svix verification if svix-signature header is present
+            # Convert Django HttpRequest headers to dict for Svix library
+            headers_dict = dict(request.headers)
+            if not dodo_service.verify_webhook_signature_svix(payload, headers_dict):
+                logger.warning(f"⚠️ [Dodo Webhook] Invalid Svix signature")
+                return HttpResponse('Invalid signature', status=401)
+        else:
+            # Use legacy HMAC verification for non-Svix webhooks
+            signature = request.headers.get('X-Dodo-Signature', '') or request.headers.get('webhook-signature', '')
+            if not dodo_service.verify_webhook_signature(payload, signature):
+                logger.warning(f"⚠️ [Dodo Webhook] Invalid signature")
+                return HttpResponse('Invalid signature', status=401)
         
         # Parse event data
         event_data = json.loads(payload.decode('utf-8'))
