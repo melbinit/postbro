@@ -622,20 +622,33 @@ def dodo_webhook(request):
         logger.info("")
         # ========== END DEBUG ==========
         
-        # Check if this is a Svix webhook (Dodo uses Svix for webhook delivery)
-        svix_signature = request.headers.get('svix-signature', '')
+        # Check if this is a Svix webhook (Dodo uses Svix/Svix-like headers)
+        # Dodo is sending: Webhook-Signature, Webhook-Timestamp, Webhook-Id (Svix format)
+        svix_signature = request.headers.get('svix-signature', '') or request.headers.get('Webhook-Signature', '')
+        svix_timestamp = request.headers.get('svix-timestamp', '') or request.headers.get('Webhook-Timestamp', '')
+        svix_id = request.headers.get('svix-id', '') or request.headers.get('Webhook-Id', '')
         
         logger.info(f"🔍 [Dodo Webhook] svix_signature found: {bool(svix_signature)}")
         if svix_signature:
             logger.info(f"🔍 [Dodo Webhook] svix_signature value: {svix_signature[:100]}...")
+        logger.info(f"🔍 [Dodo Webhook] svix_timestamp found: {bool(svix_timestamp)}")
+        logger.info(f"🔍 [Dodo Webhook] svix_id found: {bool(svix_id)}")
         
         # Verify webhook signature
         dodo_service = get_dodo_service()
         
-        if svix_signature:
-            # Use Svix verification if svix-signature header is present
-            # Convert Django HttpRequest headers to dict for Svix library
-            headers_dict = dict(request.headers)
+        if svix_signature or svix_timestamp or svix_id:
+            # Use Svix verification if svix headers are present (or their Dodo aliases)
+            # Convert Django HttpRequest headers to dict for Svix library and add aliases
+            headers_dict = {k: v for k, v in request.headers.items()}
+            # Mirror into canonical Svix keys if missing
+            if 'svix-signature' not in headers_dict and svix_signature:
+                headers_dict['svix-signature'] = svix_signature
+            if 'svix-timestamp' not in headers_dict and svix_timestamp:
+                headers_dict['svix-timestamp'] = svix_timestamp
+            if 'svix-id' not in headers_dict and svix_id:
+                headers_dict['svix-id'] = svix_id
+            
             logger.info(f"🔍 [Dodo Webhook] Using Svix verification")
             logger.info(f"🔍 [Dodo Webhook] Headers dict keys: {list(headers_dict.keys())}")
             logger.info(f"🔍 [Dodo Webhook] svix-signature in headers_dict: {'svix-signature' in headers_dict}")
@@ -1304,20 +1317,33 @@ def dodo_webhook(request):
         logger.info("")
         # ========== END DEBUG ==========
         
-        # Check if this is a Svix webhook (Dodo uses Svix for webhook delivery)
-        svix_signature = request.headers.get('svix-signature', '')
+        # Check if this is a Svix webhook (Dodo uses Svix/Svix-like headers)
+        # Dodo is sending: Webhook-Signature, Webhook-Timestamp, Webhook-Id (Svix format)
+        svix_signature = request.headers.get('svix-signature', '') or request.headers.get('Webhook-Signature', '')
+        svix_timestamp = request.headers.get('svix-timestamp', '') or request.headers.get('Webhook-Timestamp', '')
+        svix_id = request.headers.get('svix-id', '') or request.headers.get('Webhook-Id', '')
         
         logger.info(f"🔍 [Dodo Webhook] svix_signature found: {bool(svix_signature)}")
         if svix_signature:
             logger.info(f"🔍 [Dodo Webhook] svix_signature value: {svix_signature[:100]}...")
+        logger.info(f"🔍 [Dodo Webhook] svix_timestamp found: {bool(svix_timestamp)}")
+        logger.info(f"🔍 [Dodo Webhook] svix_id found: {bool(svix_id)}")
         
         # Verify webhook signature
         dodo_service = get_dodo_service()
         
-        if svix_signature:
-            # Use Svix verification if svix-signature header is present
-            # Convert Django HttpRequest headers to dict for Svix library
-            headers_dict = dict(request.headers)
+        if svix_signature or svix_timestamp or svix_id:
+            # Use Svix verification if svix headers are present (or their Dodo aliases)
+            # Convert Django HttpRequest headers to dict for Svix library and add aliases
+            headers_dict = {k: v for k, v in request.headers.items()}
+            # Mirror into canonical Svix keys if missing
+            if 'svix-signature' not in headers_dict and svix_signature:
+                headers_dict['svix-signature'] = svix_signature
+            if 'svix-timestamp' not in headers_dict and svix_timestamp:
+                headers_dict['svix-timestamp'] = svix_timestamp
+            if 'svix-id' not in headers_dict and svix_id:
+                headers_dict['svix-id'] = svix_id
+            
             logger.info(f"🔍 [Dodo Webhook] Using Svix verification")
             logger.info(f"🔍 [Dodo Webhook] Headers dict keys: {list(headers_dict.keys())}")
             logger.info(f"🔍 [Dodo Webhook] svix-signature in headers_dict: {'svix-signature' in headers_dict}")

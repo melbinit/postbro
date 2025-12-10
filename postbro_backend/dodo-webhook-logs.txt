@@ -1,0 +1,101 @@
+ 127.0.0.1 - - [10/Dec/2025:18:50:31 +0000] "GET /health/ HTTP/1.1" 200 217 "-" "curl/8.14.1"
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 ================================================================================
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 🔍 [DODO WEBHOOK DEBUG] Full Webhook Data
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 ================================================================================
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 
+postbro_backend        | 📋 ALL HEADERS:
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 --------------------------------------------------------------------------------
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Host: api.postbro.app
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   X-Real-Ip: 172.68.175.48
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   X-Forwarded-For: 50.112.21.217, 172.68.175.48
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   X-Forwarded-Proto: https
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Connection: close
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Content-Length: 1031
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Content-Type: application/json
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Webhook-Signature: v1,Eph7IeXuMKPXRlM25k9qr/xUxAhcsat8xyJsTfawDFA=
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   User-Agent: Svix-Webhooks/1.81.0 (sender-9YMgn; +https://www.svix.com/http-sender/)
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Webhook-Timestamp: 1765392635
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Cf-Ray: 9abeedc6cbdb8e62-PDX
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Webhook-Id: msg_36fLN6Y1Kxsn8QH3P2vznQm3DtH
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Accept-Encoding: gzip, br
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Accept: */*
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Cdn-Loop: cloudflare; loops=1
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Cf-Connecting-Ip: 50.112.21.217
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Cf-Ipcountry: US
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Cf-Visitor: {"scheme":"https"}
+postbro_redis          | 58:C 10 Dec 2025 18:10:45.068 * Fork CoW for RDB: current 0 MB, peak 0 MB, average 0 MB
+postbro_redis          | 1:M 10 Dec 2025 18:10:45.164 * Background saving terminated with success
+postbro_redis          | 1:M 10 Dec 2025 18:20:39.356 * 100 changes in 300 seconds. Saving...
+postbro_redis          | 1:M 10 Dec 2025 18:20:39.356 * Background saving started by pid 414
+postbro_redis          | 414:C 10 Dec 2025 18:20:39.359 * DB saved on disk
+postbro_redis          | 414:C 10 Dec 2025 18:20:39.359 * Fork CoW for RDB: current 0 MB, peak 0 MB, average 0 MB
+postbro_redis          | 1:M 10 Dec 2025 18:20:39.457 * Background saving terminated with success
+postbro_redis          | 1:M 10 Dec 2025 18:31:54.381 * 100 changes in 300 seconds. Saving...
+postbro_redis          | 1:M 10 Dec 2025 18:31:54.381 * Background saving started by pid 816
+postbro_redis          | 816:C 10 Dec 2025 18:31:54.387 * DB saved on disk
+postbro_redis          | 816:C 10 Dec 2025 18:31:54.388 * Fork CoW for RDB: current 0 MB, peak 0 MB, average 0 MB
+postbro_redis          | 1:M 10 Dec 2025 18:31:54.483 * Background saving terminated with success
+postbro_redis          | 1:M 10 Dec 2025 18:40:48.359 * 100 changes in 300 seconds. Saving...
+postbro_redis          | 1:M 10 Dec 2025 18:40:48.359 * Background saving started by pid 1134
+postbro_redis          | 1134:C 10 Dec 2025 18:40:48.364 * DB saved on disk
+postbro_redis          | 1134:C 10 Dec 2025 18:40:48.365 * Fork CoW for RDB: current 0 MB, peak 0 MB, average 0 MB
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 
+postbro_backend        | 📋 META HEADERS (HTTP_*):
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 --------------------------------------------------------------------------------
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_HOST: api.postbro.app
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_X_REAL_IP: 172.68.175.48
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_X_FORWARDED_FOR: 50.112.21.217, 172.68.175.48
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_X_FORWARDED_PROTO: https
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_CONNECTION: close
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_WEBHOOK_SIGNATURE: v1,Eph7IeXuMKPXRlM25k9qr/xUxAhcsat8xyJsTfawDFA=
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_USER_AGENT: Svix-Webhooks/1.81.0 (sender-9YMgn; +https://www.svix.com/http-sender/)
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_WEBHOOK_TIMESTAMP: 1765392635
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_CF_RAY: 9abeedc6cbdb8e62-PDX
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_WEBHOOK_ID: msg_36fLN6Y1Kxsn8QH3P2vznQm3DtH
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_ACCEPT_ENCODING: gzip, br
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_ACCEPT: */*
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_CDN_LOOP: cloudflare; loops=1
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_CF_CONNECTING_IP: 50.112.21.217
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_CF_IPCOUNTRY: US
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   HTTP_CF_VISITOR: {"scheme":"https"}
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 
+postbro_backend        | 🔐 SIGNATURE HEADERS:
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 --------------------------------------------------------------------------------
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   svix-signature: NOT FOUND
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   X-Dodo-Signature: NOT FOUND
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   webhook-signature: v1,Eph7IeXuMKPXRlM25k9qr/xUxAhcsat8xyJsTfawDFA=
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   svix-id: NOT FOUND
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   svix-timestamp: NOT FOUND
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 
+postbro_backend        | 📦 PAYLOAD INFO:
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 --------------------------------------------------------------------------------
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Payload length: 1031 bytes
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Payload type: <class 'bytes'>
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Payload preview (first 500 chars): {"business_id":"bus_H4ekzPSlcg","data":{"addons":[],"billing":{"city":"New York","country":"US","state":"New York","street":"11th Main","zipcode":"08002"},"cancel_at_next_billing_date":false,"cancelled_at":null,"created_at":"2025-06-23T11:57:59.125145Z","currency":"USD","customer":{"customer_id":"cus_8VbC6JDZzPEqfBPUdpj0K","email":"test@acme.com","name":"Test user","phone_number":null},"discount_cycles_remaining":3,"discount_id":null,"expires_at":null,"metadata":{},"meters":[],"next_billing_date
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Full payload: {"business_id":"bus_H4ekzPSlcg","data":{"addons":[],"billing":{"city":"New York","country":"US","state":"New York","street":"11th Main","zipcode":"08002"},"cancel_at_next_billing_date":false,"cancelled_at":null,"created_at":"2025-06-23T11:57:59.125145Z","currency":"USD","customer":{"customer_id":"cus_8VbC6JDZzPEqfBPUdpj0K","email":"test@acme.com","name":"Test user","phone_number":null},"discount_cycles_remaining":3,"discount_id":null,"expires_at":null,"metadata":{},"meters":[],"next_billing_date":"2025-08-23T12:01:14.672875Z","on_demand":false,"payload_type":"Subscription","payment_frequency_count":1,"payment_frequency_interval":"Month","previous_billing_date":"2025-07-23T12:01:21.506021Z","product_id":"pdt_RUST4raxbl0Rfe4VQi1z","quantity":1,"recurring_pre_tax_amount":1000,"status":"active","subscription_id":"sub_7EeHq2ewQuadropD2ra","subscription_period_count":10,"subscription_period_interval":"Year","tax_inclusive":false,"trial_period_days":0},"timestamp":"2025-08-04T05:45:31.736731Z","type":"subscription.active"}
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 
+postbro_backend        | 🔑 WEBHOOK SECRET:
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 --------------------------------------------------------------------------------
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Secret configured: YES (preview: whsec_3xOF...)
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35   Secret length: 38
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 ================================================================================
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 🔍 [Dodo Webhook] svix_signature found: False
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 🔍 [Dodo Webhook] Using legacy HMAC verification
+postbro_backend        | INFO 2025-12-10 18:50:36 [billing.views] 35 🔍 [Dodo Webhook] Signature: v1,Eph7IeXuMKPXRlM25k9qr/xUxAhcsat8xyJsTfawDFA=...
+postbro_backend        | WARNING 2025-12-10 18:50:36 [billing.views] 35 ⚠️ [Dodo Webhook] Invalid signature
+postbro_backend        | 172.20.0.1 - - [10/Dec/2025:18:50:36 +0000] "POST /api/billing/webhook/dodo/ HTTP/1.0" 401 17 "-" "Svix-Webhooks/1.81.0 (sender-9YMgn; +https://www.svix.com/http-sender/)"
+postbro_backend        | 172.20.0.1 - - [10/Dec/2025:18:50:36 +0000] "OPTIONS /api/accounts/plans/ HTTP/1.0" 200 0 "https://postbro-8x761cj5s-melbins-projects-24e66c0d.vercel.app/" "vercel-screenshot/1.0"
+postbro_backend        | 172.20.0.1 - - [10/Dec/2025:18:50:36 +0000] "OPTIONS /api/accounts/plans/ HTTP/1.0" 200 0 "https://postbro-8x761cj5s-melbins-projects-24e66c0d.vercel.app/" "vercel-screenshot/1.0"
+postbro_backend        | 172.20.0.1 - - [10/Dec/2025:18:50:37 +0000] "GET /api/accounts/plans/ HTTP/1.0" 200 1056 "https://postbro-8x761cj5s-melbins-projects-24e66c0d.vercel.app/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.0 Safari/537.36"
+postbro_backend        | 172.20.0.1 - - [10/Dec/2025:18:50:37 +0000] "GET /api/accounts/plans/ HTTP/1.0" 200 1056 "https://postbro-8x761cj5s-melbins-projects-24e66c0d.vercel.app/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.0 Safari/537.36"
+postbro_backend        | 127.0.0.1 - - [10/Dec/2025:18:51:02 +0000] "GET /health/ HTTP/1.1" 200 217 "-" "curl/8.14.1"
+postbro_redis          | 1:M 10 Dec 2025 18:40:48.460 * Background saving terminated with success
+postbro_redis          | 1:M 10 Dec 2025 18:50:36.512 * 100 changes in 300 seconds. Saving...
+postbro_redis          | 1:M 10 Dec 2025 18:50:36.512 * Background saving started by pid 1483
+postbro_redis          | 1483:C 10 Dec 2025 18:50:36.516 * DB saved on disk
+postbro_redis          | 1483:C 10 Dec 2025 18:50:36.517 * Fork CoW for RDB: current 0 MB, peak 0 MB, average 0 MB
+postbro_redis          | 1:M 10 Dec 2025 18:50:36.613 * Background saving terminated with success
+postbro_celery_worker  | absolutely not recommended!
+postbro_celery_worker  | 
+postbro_celery_worker  | Please specify a different user using the --uid option.
