@@ -369,6 +369,22 @@ class DodoPaymentsService:
         try:
             from svix.webhooks import Webhook, WebhookVerificationError
             
+            # Log headers being passed to Svix
+            logger.info(f"🔍 [Dodo] Verifying Svix webhook with headers: {list(headers.keys())}")
+            logger.info(f"🔍 [Dodo] Payload length: {len(payload)} bytes")
+            logger.info(f"🔍 [Dodo] Required Svix headers present:")
+            logger.info(f"  - svix-id: {'svix-id' in headers or 'svix-id' in [k.lower() for k in headers.keys()]}")
+            logger.info(f"  - svix-timestamp: {'svix-timestamp' in headers or 'svix-timestamp' in [k.lower() for k in headers.keys()]}")
+            logger.info(f"  - svix-signature: {'svix-signature' in headers or 'svix-signature' in [k.lower() for k in headers.keys()]}")
+            
+            # Log actual header values (truncated for security)
+            for key in ['svix-id', 'svix-timestamp', 'svix-signature']:
+                header_value = headers.get(key) or headers.get(key.lower()) or headers.get(key.upper())
+                if header_value:
+                    logger.info(f"  - {key}: {header_value[:100]}...")
+                else:
+                    logger.warning(f"  - {key}: NOT FOUND")
+            
             wh = Webhook(self.webhook_secret)
             # Verify throws WebhookVerificationError on failure, returns message on success
             wh.verify(payload, headers)
@@ -376,12 +392,17 @@ class DodoPaymentsService:
             return True
         except WebhookVerificationError as e:
             logger.error(f"❌ [Dodo] Svix webhook signature verification failed: {e}")
+            logger.error(f"🔍 [Dodo] Headers received: {headers}")
+            logger.error(f"🔍 [Dodo] Payload length: {len(payload)} bytes")
+            logger.error(f"🔍 [Dodo] Webhook secret length: {len(self.webhook_secret) if self.webhook_secret else 0}")
             return False
         except ImportError:
             logger.error("❌ [Dodo] Svix library not installed. Install with: pip install svix")
             return False
         except Exception as e:
-            logger.error(f"❌ [Dodo] Error verifying Svix webhook signature: {e}")
+            logger.error(f"❌ [Dodo] Error verifying Svix webhook signature: {e}", exc_info=True)
+            logger.error(f"🔍 [Dodo] Headers received: {headers}")
+            logger.error(f"🔍 [Dodo] Payload length: {len(payload)} bytes")
             return False
 
 
