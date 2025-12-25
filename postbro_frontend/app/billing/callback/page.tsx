@@ -372,7 +372,7 @@ function BillingCallbackContent() {
         {/* Help text */}
         <p className="text-center text-xs text-muted-foreground/60 mt-6">
           Having issues?{' '}
-          <a href="mailto:support@postbro.app" className="text-primary hover:underline">
+          <a href="mailto:mail.postbro@gmail.com" className="text-primary hover:underline">
             Contact support
           </a>
         </p>

@@ -26,7 +26,7 @@ export function PricingSection() {
         <div className="text-center mt-10">
           <p className="text-sm text-muted-foreground">
             Need higher limits?{" "}
-            <a href="mailto:support@postbro.app" className="text-foreground hover:text-primary transition-colors font-medium">
+            <a href="mailto:mail.postbro@gmail.com" className="text-foreground hover:text-primary transition-colors font-medium">
               Contact us
             </a>{" "}
             for custom plans.
