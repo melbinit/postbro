@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { type AnalysisRequest, type Post, socialApi, analysisApi, chatApi } from "@/lib/api"
 import { type AnalysisState } from "./use-analysis-state"
+import { useAppContext } from "@/contexts/app-context"
 
 interface UseAnalysisLoaderProps {
   analysisId: string | null
@@ -47,12 +48,16 @@ export function useAnalysisLoader({
     prevStatusRef,
   } = state
   
+  // Get context to update right panel
+  const { setCurrentPost, setIsLoadingPosts: setContextLoadingPosts } = useAppContext()
+  
   // Load analysis when URL changes
   useEffect(() => {
     if (!analysisId) {
       // Clear state when navigating away
       setCurrentRequest(null)
       setPosts([])
+      setCurrentPost(null) // Clear right panel
       postsFetchedForRef.current = null
       postsFetchingRef.current = null
       analysisLoadingRef.current = null
@@ -90,6 +95,8 @@ export function useAnalysisLoader({
       analysisLoadingRef.current = analysisId
       setIsLoadingAnalysis(true)
       setPosts([])
+      setCurrentPost(null) // Clear right panel
+      setContextLoadingPosts(true) // Show loading in right panel
       postsFetchedForRef.current = null
       postsFetchingRef.current = null
       
@@ -129,6 +136,8 @@ export function useAnalysisLoader({
         // Handle posts and chat loading
         if (analysis.posts && analysis.posts.length > 0) {
           setPosts(analysis.posts)
+          setCurrentPost(analysis.posts[0]) // Set first post for right panel
+          setContextLoadingPosts(false)
           postsFetchedForRef.current = analysisId
           
           // Load chat session in parallel for completed analyses
@@ -166,6 +175,7 @@ export function useAnalysisLoader({
                 .then((response) => {
                   if (response.posts && response.posts.length > 0) {
                     setPosts(response.posts)
+                    setCurrentPost(response.posts[0]) // Set first post for right panel
                     postsFetchedForRef.current = analysisId
                     console.log('✅ [Load] Posts loaded:', response.posts.length)
                   }
@@ -203,6 +213,7 @@ export function useAnalysisLoader({
               })
               .finally(() => {
                 setIsLoadingPosts(false)
+                setContextLoadingPosts(false)
                 postsFetchingRef.current = null
               })
           }
@@ -217,12 +228,14 @@ export function useAnalysisLoader({
               const response = await socialApi.getPostsByAnalysisRequest(analysisId)
               if (response.posts && response.posts.length > 0) {
                 setPosts(response.posts)
+                setCurrentPost(response.posts[0]) // Set first post for right panel
                 postsFetchedForRef.current = analysisId
               }
             } catch (err) {
               console.error('Failed to fetch posts:', err)
             } finally {
               setIsLoadingPosts(false)
+              setContextLoadingPosts(false)
               postsFetchingRef.current = null
             }
           }
@@ -230,8 +243,10 @@ export function useAnalysisLoader({
       } catch (err: any) {
         console.error('Failed to load analysis:', err)
         setCurrentRequest(null)
+        setCurrentPost(null)
       } finally {
         setIsLoadingAnalysis(false)
+        setContextLoadingPosts(false)
         analysisLoadingRef.current = null
       }
     }
@@ -260,11 +275,13 @@ export function useAnalysisLoader({
       postsFetchingRef.current = currentRequest.id
       postsFetchAttemptsRef.current.set(statusKey, fetchAttempts + 1)
       setIsLoadingPosts(true)
+      setContextLoadingPosts(true)
       socialApi.getPostsByAnalysisRequest(currentRequest.id)
         .then((response) => {
           console.log('✅ [Realtime] Fetched posts:', response.posts.length)
           if (response.posts && response.posts.length > 0) {
             setPosts(response.posts)
+            setCurrentPost(response.posts[0]) // Update right panel
             postsFetchedForRef.current = currentRequest.id
             postsFetchAttemptsRef.current.delete(statusKey)
           } else {
@@ -283,6 +300,7 @@ export function useAnalysisLoader({
         })
         .finally(() => {
           setIsLoadingPosts(false)
+          setContextLoadingPosts(false)
           postsFetchingRef.current = null
         })
     }

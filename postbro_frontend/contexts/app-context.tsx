@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react"
-import { profileApi, analysisApi, type User, type AnalysisRequest } from "@/lib/api"
+import { profileApi, analysisApi, type User, type AnalysisRequest, type Post } from "@/lib/api"
 import { userCache } from "@/lib/storage"
 import { useRealtimeAnalyses } from "@/hooks/use-realtime-analyses"
 import { useAuth } from "@clerk/nextjs"
@@ -17,6 +17,11 @@ interface AppContextType {
   loadMoreAnalyses: () => Promise<void>
   refreshAnalyses: () => Promise<void>
   refreshUser: () => Promise<void>
+  // Post panel state
+  currentPost: Post | null
+  isLoadingPosts: boolean
+  setCurrentPost: (post: Post | null) => void
+  setIsLoadingPosts: (loading: boolean) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -38,8 +43,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isLoadingUserRef = useRef(false) // Prevent duplicate calls
   const isLoadingAnalysesRef = useRef(false) // Prevent duplicate calls
   
+  // Post panel state (for 3-column layout)
+  const [currentPost, setCurrentPost] = useState<Post | null>(null)
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false)
+  
   // Get Clerk auth for token access - CRITICAL: Check isLoaded for signup redirects
-  const { getToken, isSignedIn, isLoaded } = useAuth()
+  const { getToken, isSignedIn, isLoaded, userId } = useAuth()
+  
+  // Track the current Clerk user ID to detect account switches
+  const previousUserIdRef = useRef<string | null>(null)
 
   // Set up Clerk token getter for API client
   useEffect(() => {
@@ -48,6 +60,98 @@ export function AppProvider({ children }: { children: ReactNode }) {
       logger.debug('[AppContext] Token getter set up')
     }
   }, [getToken, isLoaded])
+  
+  // Detect user account changes (logout/login with different account)
+  // Clear all cached data when user ID changes and force re-fetch
+  useEffect(() => {
+    if (!isLoaded) return
+    
+    // User logged out
+    if (!isSignedIn && previousUserIdRef.current) {
+      logger.info('[AppContext] User logged out - clearing all cache')
+      // Clear localStorage cache
+      userCache.clear()
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('postbro_cache_user')
+      }
+      // Clear React state
+      setUser(null)
+      setAnalyses([])
+      setHasLoadedUser(false)
+      setHasLoadedAnalyses(false)
+      setCurrentPost(null)
+      isLoadingUserRef.current = false
+      isLoadingAnalysesRef.current = false
+      previousUserIdRef.current = null
+      return
+    }
+    
+    // User logged in (or switched accounts)
+    if (isSignedIn && userId) {
+      const isDifferentUser = previousUserIdRef.current && previousUserIdRef.current !== userId
+      
+      if (isDifferentUser) {
+        // CRITICAL: Different user detected - must clear everything and fetch fresh
+        logger.info('[AppContext] USER CHANGED - clearing old cache and fetching fresh data', { 
+          from: previousUserIdRef.current, 
+          to: userId 
+        })
+        
+        // Clear all caches
+        userCache.clear()
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('postbro_cache_user')
+        }
+        
+        // Clear React state
+        setUser(null)
+        setAnalyses([])
+        setHasLoadedUser(false)
+        setHasLoadedAnalyses(false)
+        setCurrentPost(null)
+        isLoadingUserRef.current = false
+        isLoadingAnalysesRef.current = false
+        
+        // Update the ref BEFORE fetching
+        previousUserIdRef.current = userId
+        
+        // Force fetch fresh data immediately (don't wait for other effects)
+        setIsLoadingUser(true)
+        setIsLoadingAnalyses(true)
+        
+        profileApi.getProfile()
+          .then((data) => {
+            logger.info('[AppContext] Fresh user data loaded after account switch:', data.email)
+            setUser(data)
+            userCache.set(data)
+            setHasLoadedUser(true)
+          })
+          .catch((error) => {
+            logger.error('[AppContext] Failed to fetch fresh user profile:', error)
+          })
+          .finally(() => {
+            setIsLoadingUser(false)
+          })
+        
+        analysisApi.getAnalysisRequests({ limit: 15, offset: 0 })
+          .then((data) => {
+            setAnalyses(data.requests || [])
+            setAnalysesOffset(15)
+            setHasMoreAnalyses(data.has_more || false)
+            setHasLoadedAnalyses(true)
+          })
+          .catch((error) => {
+            logger.error('[AppContext] Failed to fetch analyses:', error)
+          })
+          .finally(() => {
+            setIsLoadingAnalyses(false)
+          })
+      } else if (!previousUserIdRef.current) {
+        // First time login - just track the user ID, let normal flow handle data loading
+        previousUserIdRef.current = userId
+      }
+    }
+  }, [isLoaded, isSignedIn, userId])
 
   // Mark as mounted on client (prevents hydration mismatch)
   useEffect(() => {
@@ -65,19 +169,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     
     // Only check cache on client side (after mount)
+    // IMPORTANT: If user switched accounts, cache should already be cleared
+    // by the userId change detection effect
     if (isMounted) {
       const cached = userCache.get()
       if (cached) {
-        logger.debug('[AppContext] Using cached user')
+        logger.debug('[AppContext] Using cached user:', cached.email)
         setUser(cached)
         setHasLoadedUser(true)
         setIsLoadingUser(false)
-        // Don't fetch if cache is fresh (< 30 min) - username rarely changes
         return
       }
     }
     
-    // No cache or expired - fetch fresh
+    // No cache or expired or mismatched - fetch fresh
     try {
       isLoadingUserRef.current = true
       setIsLoadingUser(true)
@@ -85,6 +190,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUser(data)
       userCache.set(data)
       setHasLoadedUser(true)
+      logger.debug('[AppContext] Fresh user loaded:', data.email)
     } catch (error) {
       logger.error('[AppContext] Failed to fetch profile:', error)
       // Keep cached data on error if available
@@ -317,6 +423,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         loadMoreAnalyses,
         refreshAnalyses,
         refreshUser,
+        // Post panel state
+        currentPost,
+        isLoadingPosts,
+        setCurrentPost,
+        setIsLoadingPosts,
       }}
     >
       {children}

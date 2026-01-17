@@ -26,6 +26,15 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
+      // Clear all caches before signing out
+      const { userCache } = await import('@/lib/storage')
+      userCache.clear()
+      
+      // Clear any localStorage data
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('postbro_cache_user')
+      }
+      
       await signOut()
       router.push("/")
     } catch (error) {

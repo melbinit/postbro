@@ -65,6 +65,13 @@ export function sanitizeErrorMessage(message: string | null | undefined): string
     return 'Something went wrong on our end. Please try again.'
   }
   
+  // Never show Gemini/AI technical errors or content policy details
+  if (msg.includes('Gemini') || msg.includes('safety filters') || msg.includes('content policy') || 
+      msg.includes('finish_reason') || msg.includes('SAFETY') || msg.includes('blocked by') ||
+      msg.includes('candidates_tokens') || msg.includes('prompt_tokens') || msg.includes('response.text')) {
+    return 'Unable to analyze this post. Please try again.'
+  }
+  
   // Check for "Unexpected error:" prefix and sanitize the rest
   if (msg.includes('Unexpected error:')) {
     const parts = msg.split('Unexpected error:')
@@ -143,7 +150,7 @@ export function getFailureMessage(stage: string | undefined): { message: string;
   // Gemini/AI analysis failures
   if (stageLower.includes('analysing') || stageLower.includes('analysis') || stageLower === 'analysing') {
     return { 
-      message: "Our AI had trouble analyzing this post. This is usually temporary.", 
+      message: "Our AI had trouble analyzing this post. Please try again.", 
       stage: 'ai_analysis' 
     }
   }

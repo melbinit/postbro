@@ -1,8 +1,6 @@
 import { type AnalysisRequest, type Post } from "@/lib/api"
 import { AnalysisForm } from "@/components/app/analysis-form"
 import { ChatInput } from "@/components/app/chat-input"
-import { AlertCircle, RefreshCw } from "lucide-react"
-import { getFailureMessage } from "../utils/error-utils"
 
 interface InputAreaProps {
   currentRequest: AnalysisRequest | null
@@ -28,7 +26,7 @@ export function InputArea({
   setIsFormMinimized,
 }: InputAreaProps) {
   return (
-    <div className="flex-shrink-0 p-4 md:p-6 relative z-10">
+    <div className="flex-shrink-0 px-4 lg:px-6 xl:px-8 py-4 relative z-10">
       {(() => {
         // 1. Show ChatInput if analysis completed and messages loaded
         if (
@@ -40,7 +38,7 @@ export function InputArea({
           messagesLoaded
         ) {
           return (
-            <div className="w-full max-w-3xl mx-auto">
+            <div className="w-full max-w-2xl xl:max-w-3xl mx-auto">
               <ChatInput 
                 postAnalysisId={postAnalysisId}
                 onMessageSent={() => {
@@ -54,31 +52,13 @@ export function InputArea({
         }
         
         // 2. Show form with pre-filled URL if analysis failed
+        // Error message is already shown in the chat area, no need for redundant message
         if (
           currentRequest &&
           (currentRequest.status === 'failed' || latestStatus?.is_error)
         ) {
-          const failureInfo = getFailureMessage(latestStatus?.stage)
-          
           return (
-            <div className="w-full max-w-3xl mx-auto">
-              {/* Modern error notice */}
-              <div className="mb-5 p-4 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex-shrink-0">
-                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-1">
-                      {failureInfo.message}
-                    </p>
-                    <p className="text-xs text-amber-700/80 dark:text-amber-300/70 flex items-center gap-1.5">
-                      <RefreshCw className="h-3 w-3" />
-                      Ready to retry with your previous input
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="w-full max-w-2xl xl:max-w-3xl mx-auto">
               <AnalysisForm 
                 key={`analysis-form-retry-${currentRequest.id}`}
                 currentRequest={currentRequest}

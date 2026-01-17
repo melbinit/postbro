@@ -6,6 +6,7 @@ Supports fast path (existing posts) and slow path (new posts) for optimization.
 """
 
 import logging
+import re
 from typing import List, Dict, Tuple, Optional
 from analysis.models import PostAnalysisRequest
 from analysis.processors.duplicate_checker import check_existing_posts
@@ -107,7 +108,14 @@ def _collect_instagram_posts(
     api_calls = 0
     fast_path_post_ids = set()
     
+    # Clean URLs - remove zero-width characters that can come from copy-paste
+    def clean_url(url: str) -> str:
+        """Remove zero-width chars (ZWSP, ZWNJ, ZWJ, BOM, WJ) and trim"""
+        return re.sub(r'[\u200b-\u200d\uFEFF\u2060]', '', url).strip()
+    
     for url in urls:
+        # Clean the URL before processing
+        url = clean_url(url)
         existing_post = existing_posts.get(url)
         
         if existing_post:

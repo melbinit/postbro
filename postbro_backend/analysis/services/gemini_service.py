@@ -386,6 +386,125 @@ def analyze_post_with_gemini(
         else:
             logger.warning("⚠️ [Gemini] Usage metadata not available in response")
         
+        # Check if response has valid text content before accessing it
+        if not hasattr(response, 'text') or response.text is None or not response.text.strip():
+            # Response is empty or blocked - gather diagnostic information
+            logger.error("❌ [Gemini] Response text is empty or None")
+            
+            # Log the full response object for debugging
+            logger.error(f"🔍 [Gemini] Full response object type: {type(response)}")
+            logger.error(f"🔍 [Gemini] Response attributes: {dir(response)}")
+            
+            # Try to extract finish_reason and safety info
+            finish_reason = None
+            safety_info = []
+            blocked_reasons = []
+            
+            try:
+                if hasattr(response, 'candidates') and response.candidates:
+                    candidate = response.candidates[0]
+                    logger.error(f"🔍 [Gemini] Candidate attributes: {dir(candidate)}")
+                    
+                    # Get finish reason
+                    if hasattr(candidate, 'finish_reason'):
+                        finish_reason = str(candidate.finish_reason)
+                        logger.error(f"🔍 [Gemini] Finish reason: {finish_reason}")
+                    
+                    # Get safety ratings
+                    if hasattr(candidate, 'safety_ratings'):
+                        for rating in candidate.safety_ratings:
+                            category = getattr(rating, 'category', 'UNKNOWN')
+                            probability = getattr(rating, 'probability', 'UNKNOWN')
+                            blocked = getattr(rating, 'blocked', False)
+                            
+                            rating_info = f"{category}: {probability} (blocked={blocked})"
+                            safety_info.append(rating_info)
+                            
+                            if blocked or str(probability) in ['HIGH', 'MEDIUM']:
+                                blocked_reasons.append(f"{category}:{probability}")
+                        
+                        logger.error(f"🔍 [Gemini] Safety ratings: {safety_info}")
+                    
+                    # Get content if available
+                    if hasattr(candidate, 'content'):
+                        content = candidate.content
+                        logger.error(f"🔍 [Gemini] Content type: {type(content)}")
+                        if hasattr(content, 'parts'):
+                            logger.error(f"🔍 [Gemini] Content parts: {len(content.parts)} parts")
+                            for i, part in enumerate(content.parts):
+                                logger.error(f"🔍 [Gemini] Part {i}: {dir(part)}")
+                else:
+                    logger.error("🔍 [Gemini] No candidates in response")
+                    
+                # Try to get prompt_feedback if available
+                if hasattr(response, 'prompt_feedback'):
+                    feedback = response.prompt_feedback
+                    logger.error(f"🔍 [Gemini] Prompt feedback: {feedback}")
+                    if hasattr(feedback, 'block_reason'):
+                        block_reason = str(feedback.block_reason)
+                        logger.error(f"🔍 [Gemini] Prompt block reason: {block_reason}")
+                        blocked_reasons.append(f"PROMPT_BLOCKED:{block_reason}")
+                    if hasattr(feedback, 'safety_ratings'):
+                        logger.error(f"🔍 [Gemini] Prompt safety ratings: {feedback.safety_ratings}")
+            except Exception as inspect_error:
+                logger.error(f"❌ [Gemini] Error inspecting response: {inspect_error}")
+            
+            # Build detailed error message
+            error_msg = "Gemini returned empty response. "
+            
+            if finish_reason:
+                error_msg += f"Finish reason: {finish_reason}. "
+                
+                # Map finish reasons to user-friendly messages
+                if 'SAFETY' in finish_reason:
+                    error_msg += "Content was blocked by safety filters. "
+                elif 'MAX_TOKENS' in finish_reason or 'LENGTH' in finish_reason:
+                    error_msg += "Response exceeded token limit. "
+                elif 'RECITATION' in finish_reason:
+                    error_msg += "Content too similar to training data. "
+                elif 'OTHER' in finish_reason:
+                    error_msg += "Generation stopped for other reasons. "
+            
+            if blocked_reasons:
+                error_msg += f"Blocked reasons: {', '.join(blocked_reasons)}. "
+            
+            if safety_info:
+                error_msg += f"Safety check results: {'; '.join(safety_info)}. "
+            
+            if not finish_reason and not blocked_reasons:
+                error_msg += "Possible causes: content policy violation, safety filters, or API error. "
+            
+            error_msg += "The post content may have triggered Gemini's safety filters or content policies."
+            
+            logger.error(f"❌ [Gemini] {error_msg}")
+            
+            # Log the failed API call with detailed information
+            api_call_time = time.time() - api_call_start
+            try:
+                log_external_api_call.delay(
+                    user_id=user_id,
+                    service='gemini',
+                    endpoint=f'/v1/models/{model_name}:generateContent',
+                    method='POST',
+                    status_code=200,  # API returned 200 but content was blocked
+                    response_time_ms=int(api_call_time * 1000),
+                    error_message=error_msg[:1000],
+                    metadata={
+                        'task_id': task_id,
+                        'platform': platform,
+                        'analysis_request_id': analysis_request_id,
+                        'post_id': post_id,
+                        'finish_reason': finish_reason,
+                        'blocked_reasons': blocked_reasons,
+                        'safety_ratings': safety_info,
+                        'error_type': 'empty_response',
+                    }
+                )
+            except Exception:
+                pass
+            
+            raise ValueError(error_msg)
+        
         # v2 outputs markdown (not JSON) - save as raw response
         response_text = response.text.strip()
         original_response = response_text  # Full markdown response
@@ -467,6 +586,30 @@ def analyze_post_with_gemini(
         processing_time = time.time() - start_time
         error_type = type(e).__name__
         logger.error(f"❌ [Gemini] Error after {processing_time:.2f}s: {error_type} - {str(e)}")
-        if 'response_text' in locals() and response_text:
+        
+        # Log response details if available
+        if 'response' in locals() and response:
+            try:
+                logger.error(f"🔍 [Gemini] Response object available for inspection")
+                logger.error(f"🔍 [Gemini] Response type: {type(response)}")
+                if hasattr(response, 'text'):
+                    logger.error(f"🔍 [Gemini] Response.text exists: {response.text is not None}")
+                    if response.text:
+                        logger.error(f"🔍 [Gemini] Response.text length: {len(response.text)}")
+                        logger.error(f"🔍 [Gemini] Response preview: {response.text[:500]}...")
+                else:
+                    logger.error(f"🔍 [Gemini] Response has no 'text' attribute")
+                
+                # Log candidates info if available
+                if hasattr(response, 'candidates'):
+                    logger.error(f"🔍 [Gemini] Candidates count: {len(response.candidates) if response.candidates else 0}")
+                    if response.candidates:
+                        candidate = response.candidates[0]
+                        if hasattr(candidate, 'finish_reason'):
+                            logger.error(f"🔍 [Gemini] Finish reason: {candidate.finish_reason}")
+            except Exception as inspect_error:
+                logger.error(f"❌ [Gemini] Error inspecting response object: {inspect_error}")
+        elif 'response_text' in locals() and response_text:
             logger.error(f"   Response preview: {response_text[:500]}...")
+        
         raise

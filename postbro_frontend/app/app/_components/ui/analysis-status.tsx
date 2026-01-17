@@ -4,6 +4,7 @@ import { PostCard } from "@/components/app/post-card"
 import { ChatMessages } from "@/components/app/chat-messages"
 import { sanitizeErrorMessage } from "../utils/error-utils"
 import { logger } from "@/lib/logger"
+import { cn } from "@/lib/utils"
 
 interface AnalysisStatusProps {
   currentRequest: AnalysisRequest
@@ -53,26 +54,28 @@ export function AnalysisStatus({
         </div>
       </div>
 
-      {/* Display posts when available */}
-      {isLoadingPosts ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-sm text-muted-foreground">Loading posts...</span>
-        </div>
-      ) : posts.length > 0 ? (
-        <div className="space-y-6">
-          {posts.map((post) => (
-            <PostCard 
-              key={`${currentRequest.id}-${post.id}`} 
-              post={post} 
-            />
-          ))}
-        </div>
-      ) : currentRequest && (latestStatus?.stage === 'analysis_complete' || latestStatus?.stage === 'social_data_fetched') ? (
-        <div className="text-center py-8 text-muted-foreground text-sm">
-          <p>No posts found for this analysis</p>
-        </div>
-      ) : null}
+      {/* Display posts when available - Hidden on xl+ screens (shown in right panel) */}
+      <div className="xl:hidden">
+        {isLoadingPosts ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-sm text-muted-foreground">Loading posts...</span>
+          </div>
+        ) : posts.length > 0 ? (
+          <div className="space-y-6">
+            {posts.map((post) => (
+              <PostCard 
+                key={`${currentRequest.id}-${post.id}`} 
+                post={post} 
+              />
+            ))}
+          </div>
+        ) : currentRequest && (latestStatus?.stage === 'analysis_complete' || latestStatus?.stage === 'social_data_fetched') ? (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            <p>No posts found for this analysis</p>
+          </div>
+        ) : null}
+      </div>
 
       {/* Chat Messages */}
       {postAnalysisId && (latestStatus?.stage === 'analysis_complete' || currentRequest.status === 'completed') && (

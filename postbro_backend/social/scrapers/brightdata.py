@@ -10,6 +10,7 @@ import os
 import json
 import logging
 import time
+import re
 from typing import List, Dict, Optional
 from django.conf import settings
 import requests
@@ -250,6 +251,9 @@ class BrightDataScraper:
             >>> print(data['likes'])
             1234
         """
+        # Clean URL - remove zero-width characters and trim
+        url = re.sub(r'[\u200b-\u200d\uFEFF\u2060]', '', url).strip()
+        
         if not url or 'instagram.com' not in url.lower():
             raise ValueError(f"Invalid Instagram URL: {url}")
         
@@ -289,6 +293,8 @@ class BrightDataScraper:
     def scrape_instagram_posts(self, urls: List[str], analysis_request_id: Optional[str] = None) -> List[Dict]:
         """
         Scrape multiple Instagram posts.
+        
+        Note: URLs are cleaned to remove zero-width characters before scraping
         
         Args:
             urls: List of Instagram post URLs

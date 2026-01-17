@@ -79,10 +79,11 @@ def extract_post_id(url: str, platform: Optional[str] = None) -> Optional[str]:
     # Examples:
     # https://www.instagram.com/p/ABC123/
     # https://www.instagram.com/reel/ABC123/
+    # https://www.instagram.com/reels/ABC123/ (plural - mobile/share links)
     if platform == 'instagram':
         patterns = [
             r'instagram\.com/p/([A-Za-z0-9_-]+)',
-            r'instagram\.com/reel/([A-Za-z0-9_-]+)',
+            r'instagram\.com/reels?/([A-Za-z0-9_-]+)',  # Matches both /reel/ and /reels/
             r'instagr\.am/p/([A-Za-z0-9_-]+)',
         ]
         for pattern in patterns:

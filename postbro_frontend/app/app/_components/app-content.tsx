@@ -101,13 +101,22 @@ export function AppContent() {
   }
   
   return (
-    <main className="flex-1 flex flex-col min-w-0 relative bg-background overflow-hidden h-full">
-      {/* Gradient background */}
+    <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden h-full">
+      {/* Subtle gradient background */}
       <div 
-        className="absolute inset-0 pointer-events-none flex items-center justify-center"
+        className="absolute inset-0 pointer-events-none"
         style={{ 
-          background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(37, 99, 235, 0.06) 0%, rgba(139, 92, 246, 0.04) 30%, rgba(139, 92, 246, 0.015) 60%, transparent 100%)'
+          background: 'radial-gradient(ellipse 100% 80% at 50% 0%, rgba(37, 99, 235, 0.04) 0%, rgba(139, 92, 246, 0.02) 40%, transparent 100%)'
         }} 
+      />
+      
+      {/* Grid pattern overlay for modern SaaS feel */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-[0.02]"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)',
+          backgroundSize: '32px 32px'
+        }}
       />
 
       {/* Chat-like interface */}
@@ -116,21 +125,25 @@ export function AppContent() {
         <div 
           ref={state.messagesContainerRef}
           data-scroll-container
-          className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-8"
+          className="flex-1 min-h-0 overflow-y-auto px-4 lg:px-6 xl:px-8 py-6"
           style={{ 
             position: 'relative',
-            zIndex: isNotesDrawerOpen ? 45 : 'auto' // Higher than backdrop (40) but lower than modal (50)
+            zIndex: isNotesDrawerOpen ? 45 : 'auto'
           }}
         >
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-2xl xl:max-w-3xl mx-auto space-y-6">
             {/* Welcome message */}
             {!state.currentRequest && !state.isLoadingAnalysis && <WelcomeMessage />}
             
             {/* Loading indicator */}
             {state.isLoadingAnalysis && (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-primary mr-3" />
-                <span className="text-sm text-muted-foreground">Loading analysis...</span>
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="relative">
+                  <div className="size-12 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center animate-pulse">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                </div>
+                <span className="text-sm text-muted-foreground mt-4">Loading analysis...</span>
               </div>
             )}
             
@@ -153,20 +166,23 @@ export function AppContent() {
           </div>
         </div>
         
-        {/* Input area */}
-        <InputArea
-          currentRequest={state.currentRequest}
-          latestStatus={latestStatus}
-          postAnalysisId={state.postAnalysisId}
-          posts={state.posts}
-          messagesLoaded={state.messagesLoaded}
-          isFormMinimized={state.isFormMinimized}
-          setIsFormMinimized={state.setIsFormMinimized}
-        />
+        {/* Input area with modern styling */}
+        <div className="border-t border-border/40 bg-background/80 backdrop-blur-sm">
+          <InputArea
+            currentRequest={state.currentRequest}
+            latestStatus={latestStatus}
+            postAnalysisId={state.postAnalysisId}
+            posts={state.posts}
+            messagesLoaded={state.messagesLoaded}
+            isFormMinimized={state.isFormMinimized}
+            setIsFormMinimized={state.setIsFormMinimized}
+          />
+        </div>
 
         {/* Floating Notes Button - only show when analysis is completed and has postAnalysisId */}
+        {/* On xl+ screens, position it differently to not overlap with right panel */}
         {state.currentRequest?.status === 'completed' && state.postAnalysisId && (
-          <div className="fixed bottom-24 right-6 z-30">
+          <div className="fixed bottom-24 right-6 xl:right-[420px] 2xl:right-[460px] z-30 transition-all">
             <NotesButton onClick={() => setIsNotesDrawerOpen(true)} />
           </div>
         )}
@@ -182,6 +198,6 @@ export function AppContent() {
           // Could trigger a refresh of notes list in sidebar if needed
         }}
       />
-    </main>
+    </div>
   )
 }
