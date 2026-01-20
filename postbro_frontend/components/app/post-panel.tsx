@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ExternalLink, Maximize2, Minimize2, X } from "lucide-react"
+import { ExternalLink, Maximize2, Minimize2, X, Heart, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import type { Post } from "@/lib/api"
-import { YouTubeEmbed, XEmbed, InstagramEmbed } from "./embeds"
+import { YouTubeEmbed, XEmbed } from "./embeds"
 import { cn } from "@/lib/utils"
+import { formatDistanceToNow } from "date-fns"
 
 interface PostPanelProps {
   post: Post | null
@@ -154,7 +155,8 @@ export function PostPanel({ post, isLoading, onClose }: PostPanelProps) {
           "p-4",
           isExpanded && "max-w-3xl mx-auto"
         )}>
-          {!useEmbedFallback ? (
+          {/* YouTube & X: Use native embeds */}
+          {!useEmbedFallback && !isInstagram && (
             <>
               {isYouTube && post.platform_post_id && (
                 <div className="rounded-xl overflow-hidden shadow-sm border border-border/30">
@@ -171,15 +173,16 @@ export function PostPanel({ post, isLoading, onClose }: PostPanelProps) {
                   onError={handleEmbedError}
                 />
               )}
-              {isInstagram && post.url && (
-                <InstagramEmbed 
-                  url={post.url}
-                  onError={handleEmbedError}
-                />
-              )}
             </>
-          ) : (
-            // Fallback: Show thumbnail with link
+          )}
+
+          {/* Instagram: Custom beautiful UI (no embed) */}
+          {isInstagram && post && (
+            <InstagramCustomCard post={post} isExpanded={isExpanded} />
+          )}
+
+          {/* Fallback for YouTube/X when embed fails */}
+          {useEmbedFallback && !isInstagram && (
             <div className="rounded-xl overflow-hidden border border-border/30 bg-muted">
               {post?.thumbnail ? (
                 <a href={post.url} target="_blank" rel="noopener noreferrer" className="block">
@@ -205,8 +208,8 @@ export function PostPanel({ post, isLoading, onClose }: PostPanelProps) {
             </div>
           )}
 
-          {/* Post metadata (only for YouTube or fallback) */}
-          {(isYouTube || useEmbedFallback) && post && (
+          {/* Post metadata (only for YouTube or fallback - not Instagram) */}
+          {(isYouTube || (useEmbedFallback && !isInstagram)) && post && (
             <div className="mt-4 space-y-3">
               {/* Title (YouTube) */}
               {isYouTube && post.metrics?.title && (
@@ -235,6 +238,139 @@ export function PostPanel({ post, isLoading, onClose }: PostPanelProps) {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Custom Instagram card component - beautiful UI without embed
+ */
+function InstagramCustomCard({ post, isExpanded }: { post: Post, isExpanded: boolean }) {
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0)
+  const [imageError, setImageError] = useState(false)
+
+  // Get displayable media (images, thumbnails, video frames)
+  const displayMedia = post.media.filter(m => 
+    m.media_type === 'image' || 
+    m.media_type === 'video_thumbnail' || 
+    m.media_type === 'video_frame'
+  )
+  
+  const currentMedia = displayMedia[currentMediaIndex]
+  const mediaUrl = currentMedia?.supabase_url || currentMedia?.source_url || post.thumbnail
+
+  // Reset error state when media changes
+  useEffect(() => {
+    setImageError(false)
+  }, [currentMediaIndex])
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-border/30 bg-card">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/30">
+        <div className="size-9 rounded-full bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 p-[2px]">
+          <div className="size-full rounded-full bg-card flex items-center justify-center">
+            <span className="text-xs font-bold text-foreground">
+              {post.username.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate">{post.username}</p>
+          <p className="text-xs text-muted-foreground">
+            {formatDistanceToNow(new Date(post.posted_at), { addSuffix: true })}
+          </p>
+        </div>
+        <svg className="h-5 w-5 text-pink-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+        </svg>
+      </div>
+
+      {/* Media */}
+      {mediaUrl && !imageError ? (
+        <div className="relative aspect-square bg-muted">
+          <img
+            src={mediaUrl}
+            alt={post.content || post.username}
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
+          
+          {/* Carousel indicators */}
+          {displayMedia.length > 1 && (
+            <>
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {displayMedia.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentMediaIndex(index)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      index === currentMediaIndex
+                        ? 'w-6 bg-white'
+                        : 'w-1.5 bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
+              
+              {currentMediaIndex > 0 && (
+                <button
+                  onClick={() => setCurrentMediaIndex(currentMediaIndex - 1)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 size-8 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm flex items-center justify-center text-white"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+              )}
+              {currentMediaIndex < displayMedia.length - 1 && (
+                <button
+                  onClick={() => setCurrentMediaIndex(currentMediaIndex + 1)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 size-8 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm flex items-center justify-center text-white"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="aspect-square bg-muted flex items-center justify-center">
+          <p className="text-sm text-muted-foreground">Media unavailable</p>
+        </div>
+      )}
+
+      {/* Actions & Metrics */}
+      <div className="px-4 py-3 space-y-2">
+        {/* Metrics */}
+        {post.metrics && (
+          <div className="flex items-center gap-4 text-sm">
+            {(post.metrics.likes || post.metrics.likes === 0) && (
+              <div className="flex items-center gap-1.5">
+                <Heart className="h-5 w-5" />
+                <span className="font-semibold">{post.metrics.likes.toLocaleString()}</span>
+              </div>
+            )}
+            {(post.metrics.comments || post.metrics.comments === 0) && (
+              <div className="flex items-center gap-1.5">
+                <MessageCircle className="h-5 w-5" />
+                <span className="font-semibold">{post.metrics.comments.toLocaleString()}</span>
+              </div>
+            )}
+            {post.metrics.views && (
+              <span className="text-muted-foreground text-xs ml-auto">
+                {post.metrics.views.toLocaleString()} views
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Caption */}
+        {post.content && (
+          <div className={cn("text-sm", isExpanded ? "" : "line-clamp-3")}>
+            <span className="font-semibold mr-2">{post.username}</span>
+            <span className="text-foreground">{post.content}</span>
+          </div>
+        )}
       </div>
     </div>
   )

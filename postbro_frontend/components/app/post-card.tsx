@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Instagram, Hash, Heart, MessageCircle, Eye, ChevronLeft, ChevronRight, Repeat2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { Post } from "@/lib/api"
-import { YouTubeEmbed, XEmbed, InstagramEmbed } from "./embeds"
+import { YouTubeEmbed, XEmbed } from "./embeds"
 
 interface PostCardProps {
   post: Post
@@ -141,16 +141,10 @@ export function PostCard({ post }: PostCardProps) {
       )}
 
       {/* Full post card - shrinks when sticky appears */}
-      {/* For Instagram/Twitter: minimal styling since embeds have their own styling */}
-      {/* For YouTube: keep card styling */}
       <div 
         ref={cardRef} 
         className={`max-w-lg mx-auto transition-all duration-300 ${
           isSticky ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-        } ${
-          isYouTube 
-            ? 'bg-card border border-border/30 rounded-2xl overflow-hidden' 
-            : 'overflow-visible'
         }`}
       >
         <PostCardContent post={post} isMinimized={false} />
@@ -166,7 +160,7 @@ function PostCardContent({ post, isMinimized }: { post: Post, isMinimized: boole
   const isTwitter = post.platform === 'twitter' || post.platform === 'x'
   const isInstagram = post.platform === 'instagram'
   
-  // Track if embed failed and we should use fallback
+  // Track if embed failed and we should use fallback (only for YouTube/X, Instagram always uses custom UI)
   const [useEmbedFallback, setUseEmbedFallback] = useState(false)
   
   // Include all displayable media: images, thumbnails, and video frames
@@ -200,13 +194,17 @@ function PostCardContent({ post, isMinimized }: { post: Post, isMinimized: boole
     setUseEmbedFallback(true)
   }
 
+  // Determine if we should show the card wrapper (border/background)
+  // Show wrapper for YouTube, Instagram (always uses custom UI), or when embed fails
+  const showCardWrapper = isYouTube || isInstagram || useEmbedFallback
+  
   return (
-    <>
+    <div className={showCardWrapper ? 'bg-card border border-border/30 rounded-2xl overflow-hidden' : ''}>
       {/* Header - Platform specific */}
-      {/* Hide header for Instagram/Twitter when embed is successfully loaded (embed already shows this info) */}
-      {/* Always show header for YouTube (embed doesn't show metadata the same way) */}
+      {/* Hide header for Twitter when embed is successfully loaded (embed already shows this info) */}
+      {/* Always show for YouTube and Instagram (YouTube embed doesn't show metadata, Instagram uses custom UI) */}
       {/* Always show header when using fallback frames or when minimized */}
-      {(isMinimized || useEmbedFallback || isYouTube) && (
+      {(isMinimized || useEmbedFallback || isYouTube || isInstagram) && (
         <>
           {isYouTube ? (
             // YouTube style header
@@ -260,33 +258,30 @@ function PostCardContent({ post, isMinimized }: { post: Post, isMinimized: boole
         </>
       )}
 
-      {/* Media Section - Embeds with fallback to frames */}
-      {!isMinimized && !useEmbedFallback ? (
-        // Try to show native embed first
+      {/* Media Section - Embeds for YouTube/X, custom UI for Instagram */}
+      {!isMinimized ? (
         <>
-          {isYouTube && post.platform_post_id && (
-            <YouTubeEmbed 
-              videoId={post.platform_post_id} 
-              onError={handleEmbedError}
-            />
+          {/* Native embeds for YouTube and X only (not Instagram) */}
+          {!useEmbedFallback && !isInstagram && (
+            <>
+              {isYouTube && post.platform_post_id && (
+                <YouTubeEmbed 
+                  videoId={post.platform_post_id} 
+                  onError={handleEmbedError}
+                />
+              )}
+              {isTwitter && post.platform_post_id && (
+                <XEmbed 
+                  tweetId={post.platform_post_id}
+                  username={post.username}
+                  onError={handleEmbedError}
+                />
+              )}
+            </>
           )}
-          {isTwitter && post.platform_post_id && (
-            <XEmbed 
-              tweetId={post.platform_post_id}
-              username={post.username}
-              onError={handleEmbedError}
-            />
-          )}
-          {isInstagram && post.url && (
-            <InstagramEmbed 
-              url={post.url}
-              onError={handleEmbedError}
-            />
-          )}
-        </>
-      ) : !isMinimized && useEmbedFallback ? (
-        // Fallback to frames if embed fails
-        mediaUrl && !imageError ? (
+          
+          {/* Custom frames UI for Instagram or when embed fails for YouTube/X */}
+          {(isInstagram || useEmbedFallback) && mediaUrl && !imageError ? (
           <div className={`relative bg-muted ${isYouTube ? 'aspect-video' : 'aspect-square'}`}>
             <img
               src={mediaUrl}
@@ -336,21 +331,22 @@ function PostCardContent({ post, isMinimized }: { post: Post, isMinimized: boole
               </>
             )}
           </div>
-        ) : (
-          // Placeholder when frames also fail to load
-          <div className={`relative bg-muted flex items-center justify-center ${isYouTube ? 'aspect-video' : 'aspect-square'}`}>
-            <div className="text-center p-8">
-              <p className="text-sm text-muted-foreground mb-2">Media unavailable</p>
-              <p className="text-xs text-muted-foreground">Failed to load embed and frames</p>
+          ) : (isInstagram || useEmbedFallback) ? (
+            // Placeholder when frames fail to load
+            <div className={`relative bg-muted flex items-center justify-center ${isYouTube ? 'aspect-video' : 'aspect-square'}`}>
+              <div className="text-center p-8">
+                <p className="text-sm text-muted-foreground mb-2">Media unavailable</p>
+                <p className="text-xs text-muted-foreground">Failed to load media</p>
+              </div>
             </div>
-          </div>
-        )
+          ) : null}
+        </>
       ) : null}
 
       {/* Actions & Metrics - Platform specific */}
-      {/* Hide metrics footer for Instagram/Twitter when embed is showing (embed already includes engagement) */}
-      {/* Always show for YouTube or when using fallback frames */}
-      {(isMinimized || useEmbedFallback || isYouTube) && (
+      {/* Hide metrics footer for Twitter when embed is showing (embed already includes engagement) */}
+      {/* Always show for YouTube and Instagram or when using fallback frames */}
+      {(isMinimized || useEmbedFallback || isYouTube || isInstagram) && (
         <div className={`${isMinimized ? 'px-3 py-2' : 'px-4 py-3'} space-y-2`}>
           {isYouTube ? (
             // YouTube style metrics
@@ -449,6 +445,6 @@ function PostCardContent({ post, isMinimized }: { post: Post, isMinimized: boole
           )}
         </div>
       )}
-    </>
+    </div>
   )
 }

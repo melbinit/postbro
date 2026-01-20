@@ -40,6 +40,7 @@ class BrightDataScraper:
         """
         self.api_token = os.getenv('BRIGHTDATA_API_TOKEN')
         self.instagram_dataset_id = os.getenv('BRIGHTDATA_INSTAGRAM_DATASET_ID')
+        self.instagram_reels_dataset_id = os.getenv('BRIGHTDATA_INSTAGRAM_REELS_DATASET_ID')
         self.youtube_dataset_id = os.getenv('BRIGHTDATA_YOUTUBE_DATASET_ID')
         self.base_url = "https://api.brightdata.com/datasets/v3/scrape"
         self.timeout = 120  # 2 minutes timeout for long-running requests
@@ -49,6 +50,8 @@ class BrightDataScraper:
             raise ValueError("BRIGHTDATA_API_TOKEN environment variable is required")
         if not self.instagram_dataset_id:
             raise ValueError("BRIGHTDATA_INSTAGRAM_DATASET_ID environment variable is required")
+        if not self.instagram_reels_dataset_id:
+            logger.warning("BRIGHTDATA_INSTAGRAM_REELS_DATASET_ID not set - will fall back to Posts API for Reels")
         if not self.youtube_dataset_id:
             raise ValueError("BRIGHTDATA_YOUTUBE_DATASET_ID environment variable is required")
     
@@ -231,15 +234,58 @@ class BrightDataScraper:
                 except Exception:
                     pass
     
-    def scrape_instagram_post(self, url: str, analysis_request_id: Optional[str] = None) -> Dict:
+    def _get_instagram_dataset_for_url(self, url: str) -> str:
         """
-        Scrape a single Instagram post.
+        Determine the correct Instagram dataset ID based on URL type.
         
         Args:
-            url: Instagram post URL (e.g., https://www.instagram.com/p/ABC123/)
+            url: Instagram URL (post or reel)
             
         Returns:
-            Dictionary containing Instagram post data
+            Dataset ID to use (Reels API for /reel(s)/, Posts API for /p/)
+        """
+        # Clean URL first
+        clean_url = re.sub(r'[\u200b-\u200d\uFEFF\u2060]', '', url).strip().lower()
+        
+        # Check if it's a Reels URL
+        is_reels = bool(re.search(r'instagram\.com/reels?/', clean_url))
+        
+        if is_reels and self.instagram_reels_dataset_id:
+            logger.info(f"🎬 [BrightData] Using Instagram Reels API for URL: {url[:80]}...")
+            return self.instagram_reels_dataset_id
+        elif is_reels and not self.instagram_reels_dataset_id:
+            logger.warning(f"⚠️ [BrightData] Reels URL detected but REELS_DATASET_ID not configured, falling back to Posts API: {url[:80]}...")
+            return self.instagram_dataset_id
+        else:
+            logger.info(f"📸 [BrightData] Using Instagram Posts API for URL: {url[:80]}...")
+            return self.instagram_dataset_id
+    
+    def scrape_instagram_post(self, url: str, analysis_request_id: Optional[str] = None) -> Dict:
+        """
+        Scrape a single Instagram post or reel using the appropriate BrightData API.
+        
+        This method intelligently routes to:
+        - Instagram Reels API (gd_lyclm20il4r5helnj) for /reel/ and /reels/ URLs
+        - Instagram Posts API (gd_lk5ns7kz21pck8jpis) for /p/ URLs
+        
+        Both APIs return compatible data structures, so downstream processing
+        (post_saver.py) works seamlessly with either response.
+        
+        Args:
+            url: Instagram post or reel URL
+                Examples:
+                - https://www.instagram.com/p/ABC123/ (regular post)
+                - https://www.instagram.com/reel/ABC123/ (reel, singular)
+                - https://www.instagram.com/reels/ABC123/ (reel, plural)
+            analysis_request_id: Optional analysis request ID for tracking
+            
+        Returns:
+            Dictionary containing Instagram post/reel data with fields:
+            - user_posted, description, date_posted
+            - likes, num_comments
+            - photos, videos, post_content
+            - shortcode, content_id, post_id, pk
+            - (Reels API adds: video_view_count, video_play_count, audio, etc.)
             
         Raises:
             RequestException: If scraping fails
@@ -247,9 +293,9 @@ class BrightDataScraper:
             
         Example:
             >>> scraper = BrightDataScraper()
-            >>> data = scraper.scrape_instagram_post('https://www.instagram.com/p/ABC123/')
-            >>> print(data['likes'])
-            1234
+            >>> # Works for both posts and reels
+            >>> post_data = scraper.scrape_instagram_post('https://www.instagram.com/p/ABC123/')
+            >>> reel_data = scraper.scrape_instagram_post('https://www.instagram.com/reels/XYZ789/')
         """
         # Clean URL - remove zero-width characters and trim
         url = re.sub(r'[\u200b-\u200d\uFEFF\u2060]', '', url).strip()
@@ -257,13 +303,16 @@ class BrightDataScraper:
         if not url or 'instagram.com' not in url.lower():
             raise ValueError(f"Invalid Instagram URL: {url}")
         
+        # Determine which dataset to use based on URL type
+        dataset_id = self._get_instagram_dataset_for_url(url)
+        
         logger.info(f"Scraping Instagram post: {url}")
         
         input_data = [{"url": url}]
         # Get user_id from context if available (passed from analysis task)
         user_id = getattr(self, '_current_user_id', None)
         result = self._make_request(
-            self.instagram_dataset_id, 
+            dataset_id, 
             input_data, 
             timeout=60,
             user_id=user_id,

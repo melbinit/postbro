@@ -21,7 +21,20 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
       className={className}
       components={{
         // Paragraphs - clean spacing
-        p: ({ children }) => <p className="leading-[1.7] text-foreground/90 [&:not(:last-child)]:mb-3">{children}</p>,
+        // Note: Prevents invalid nesting by checking for code blocks
+        p: ({ children, node }: any) => {
+          // Check if paragraph contains a pre/code block
+          const hasCodeBlock = node?.children?.some((child: any) => 
+            child.tagName === 'pre' || child.tagName === 'code'
+          )
+          
+          // If it contains a code block, render as div to avoid invalid HTML
+          if (hasCodeBlock) {
+            return <div className="leading-[1.7] text-foreground/90 [&:not(:last-child)]:mb-3">{children}</div>
+          }
+          
+          return <p className="leading-[1.7] text-foreground/90 [&:not(:last-child)]:mb-3">{children}</p>
+        },
         
         // Bold text
         strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
@@ -39,18 +52,28 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
         ol: ({ children }) => <ol className="my-3 space-y-1.5 list-decimal pl-5 marker:text-muted-foreground/60">{children}</ol>,
         li: ({ children }) => <li className="leading-relaxed text-foreground/90">{children}</li>,
         
-        // Code blocks - modern look
+        // Pre wrapper for code blocks - prevents nesting issues
+        pre: ({ children }) => (
+          <pre className="bg-muted/60 rounded-xl p-4 my-4 overflow-x-auto text-sm">
+            {children}
+          </pre>
+        ),
+        
+        // Code - handles both inline and block
         code({ node, inline, className, children, ...props }: any) {
-          const match = /language-(\w+)/.exec(className || '')
-          
-          return !inline ? (
-            <pre className="bg-muted/60 rounded-xl p-4 my-4 overflow-x-auto text-sm">
-              <code className={`${className} font-mono`} {...props}>
+          // For inline code (e.g., `main`)
+          if (inline) {
+            return (
+              <code className="bg-muted/70 px-1.5 py-0.5 rounded-md text-[13px] font-mono text-foreground" {...props}>
                 {children}
               </code>
-            </pre>
-          ) : (
-            <code className="bg-muted/70 px-1.5 py-0.5 rounded-md text-[13px] font-mono text-foreground" {...props}>
+            )
+          }
+          
+          // For code blocks - just return the code element
+          // The <pre> wrapper is handled by the pre component above
+          return (
+            <code className={`${className} font-mono block`} {...props}>
               {children}
             </code>
           )
