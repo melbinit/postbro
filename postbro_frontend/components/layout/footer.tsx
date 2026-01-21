@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BarChart2, Twitter, Instagram, Github } from "lucide-react"
+import { Twitter, Instagram, Github } from "lucide-react"
 
 export function Footer() {
   return (
@@ -9,9 +9,6 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1 space-y-4">
             <Link href="/" className="flex items-center gap-2 group w-fit">
-              <div className="size-8 rounded-lg bg-foreground flex items-center justify-center">
-                <BarChart2 className="size-4 text-background" />
-              </div>
               <span className="font-semibold text-lg">PostBro</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-[200px] leading-relaxed">

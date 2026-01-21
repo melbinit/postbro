@@ -38,22 +38,6 @@ export function AnalysisStatus({
 }: AnalysisStatusProps) {
   return (
     <div className="space-y-4">
-      {/* User message */}
-      <div className="flex gap-4 justify-end">
-        <div className="flex-1 max-w-[80%]">
-          <div className="bg-primary/10 border border-primary/20 rounded-2xl rounded-tr-sm p-4">
-            <p className="text-sm font-medium mb-1">
-              Analyzing {currentRequest?.platform?.toUpperCase() || 'POST'} post
-            </p>
-            {currentRequest?.post_urls?.[0] && (
-              <p className="text-xs text-muted-foreground truncate">
-                {currentRequest.post_urls[0]}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Display posts when available - Hidden on xl+ screens (shown in right panel) */}
       <div className="xl:hidden">
         {isLoadingPosts ? (

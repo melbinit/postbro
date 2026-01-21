@@ -103,7 +103,7 @@ export function FeaturesSection() {
             <p className="text-[10px] sm:text-xs font-semibold text-primary uppercase tracking-wider mb-3 sm:mb-4">Features</p>
           </FadeInUp>
           <FadeInUp delay={0.1}>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-5 px-2 sm:px-0">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-5 px-2 sm:px-0">
               Analyze Viral Posts, Get{" "}
               <span className="text-primary">Content Ideas</span>
             </h2>
@@ -143,7 +143,7 @@ export function FeaturesSection() {
             <p className="text-[10px] sm:text-xs font-semibold text-primary uppercase tracking-wider mb-3 sm:mb-4 text-center">Who It's For</p>
           </FadeInUp>
           <FadeInUp delay={0.1}>
-            <h3 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-10 text-center">Built for creators and marketers</h3>
+            <h3 className="font-display text-xl sm:text-2xl font-bold mb-6 sm:mb-10 text-center">Built for creators and marketers</h3>
           </FadeInUp>
           
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

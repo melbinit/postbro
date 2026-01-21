@@ -125,7 +125,7 @@ export function AppContent() {
         <div 
           ref={state.messagesContainerRef}
           data-scroll-container
-          className="flex-1 min-h-0 overflow-y-auto px-4 lg:px-6 xl:px-8 py-6"
+          className="flex-1 min-h-0 overflow-y-auto scrollbar-visible px-4 lg:px-6 xl:px-8 py-6"
           style={{ 
             position: 'relative',
             zIndex: isNotesDrawerOpen ? 45 : 'auto'

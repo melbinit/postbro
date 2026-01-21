@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
 import { cn } from "@/lib/utils"
-import { Menu, BarChart2, ChevronRight, LogOut } from "lucide-react"
+import { Menu, ChevronRight, LogOut } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { useAuth, useClerk } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
@@ -54,6 +54,7 @@ export function LandingHeader() {
     { name: "Features", href: "/#features" },
     { name: "How it Works", href: "/#how-it-works" },
     { name: "Pricing", href: "/#pricing" },
+    { name: "FAQ", href: "/#faq" },
   ]
 
   // Loading state - show skeleton to prevent flash
@@ -70,9 +71,6 @@ export function LandingHeader() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo - always visible */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="size-8 rounded-lg bg-primary flex items-center justify-center">
-              <BarChart2 className="size-5 text-primary-foreground" />
-            </div>
             <span className="font-semibold text-xl tracking-tight">PostBro</span>
           </Link>
 
@@ -121,9 +119,6 @@ export function LandingHeader() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/app" className="flex items-center gap-2 group">
-            <div className="size-8 rounded-lg bg-primary flex items-center justify-center group-hover:bg-primary/90 transition-colors">
-              <BarChart2 className="size-5 text-primary-foreground" />
-            </div>
             <span className="font-semibold text-xl tracking-tight">PostBro</span>
           </Link>
 
@@ -161,9 +156,6 @@ export function LandingHeader() {
         {/* Logo - centered on landing page */}
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="size-8 rounded-lg bg-primary flex items-center justify-center group-hover:bg-primary/90 transition-colors">
-              <BarChart2 className="size-5 text-primary-foreground" />
-            </div>
             <span className="font-semibold text-xl tracking-tight">PostBro</span>
           </Link>
         </div>

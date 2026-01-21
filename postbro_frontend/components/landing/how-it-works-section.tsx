@@ -41,7 +41,7 @@ export function HowItWorksSection() {
             <p className="text-[10px] sm:text-xs font-semibold text-primary uppercase tracking-wider mb-3 sm:mb-4">How It Works</p>
           </FadeInUp>
           <FadeInUp delay={0.1}>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-5 px-2 sm:px-0">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-5 px-2 sm:px-0">
               From Post to Insights in <span className="text-primary">Seconds</span>
             </h2>
           </FadeInUp>

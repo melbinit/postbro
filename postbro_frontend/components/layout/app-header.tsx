@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
-import { LogOut, BarChart2, Menu } from "lucide-react"
+import { LogOut, Menu } from "lucide-react"
 import { useClerk } from "@clerk/nextjs"
 import { toast } from "sonner"
 
@@ -67,17 +67,11 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
 
         {/* Desktop: Logo on left */}
         <Link href="/app" className="hidden md:flex items-center gap-2 group">
-          <div className="size-8 rounded-lg bg-primary flex items-center justify-center group-hover:bg-primary/90 transition-colors">
-            <BarChart2 className="size-5 text-primary-foreground" />
-          </div>
           <span className="font-semibold text-xl tracking-tight">PostBro</span>
         </Link>
 
         {/* Mobile: Centered Logo */}
         <Link href="/app" className="md:hidden absolute left-1/2 -translate-x-1/2 flex items-center gap-2 group">
-          <div className="size-8 rounded-lg bg-primary flex items-center justify-center group-hover:bg-primary/90 transition-colors">
-            <BarChart2 className="size-5 text-primary-foreground" />
-          </div>
           <span className="font-semibold text-xl tracking-tight">PostBro</span>
         </Link>
 

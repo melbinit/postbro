@@ -150,7 +150,7 @@ export function PostPanel({ post, isLoading, onClose }: PostPanelProps) {
       </div>
 
       {/* Embed container */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-visible">
         <div className={cn(
           "p-4",
           isExpanded && "max-w-3xl mx-auto"

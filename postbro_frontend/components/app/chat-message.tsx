@@ -23,8 +23,11 @@ export const ChatMessage = memo(function ChatMessage({ message, streaming = fals
       {isUser ? (
         // User message - bubble style aligned right
         <div className="max-w-[85%] md:max-w-[75%]">
-          <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2.5 md:px-5 md:py-3">
-            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{message.content}</p>
+          <div className="rounded-lg rounded-br-sm px-4 py-2.5 md:px-5 md:py-3 border" style={{ 
+            backgroundColor: 'color-mix(in oklab, var(--primary) 10%, transparent)',
+            borderColor: 'color-mix(in oklab, var(--primary) 20%, transparent)'
+          }}>
+            <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground">{message.content}</p>
           </div>
         </div>
       ) : (

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
 import { cn } from "@/lib/utils"
-import { Menu, BarChart2, LogOut, ChevronRight } from "lucide-react"
+import { Menu, LogOut, ChevronRight } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { useAuth, useClerk } from "@clerk/nextjs"
 import { toast } from "sonner"
@@ -72,9 +72,6 @@ export function Header() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo - always visible */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="size-8 rounded-lg bg-primary flex items-center justify-center">
-              <BarChart2 className="size-5 text-primary-foreground" />
-            </div>
             <span className="font-bold text-xl tracking-tight">PostBro</span>
           </Link>
 
@@ -124,9 +121,6 @@ export function Header() {
       )}>
         <div className="flex items-center gap-2">
           <Link href={isAuth ? "/app" : "/"} className="flex items-center gap-2 group">
-            <div className="size-8 rounded-lg bg-primary flex items-center justify-center group-hover:bg-primary/90 transition-colors">
-              <BarChart2 className="size-5 text-primary-foreground" />
-            </div>
             <span className="font-bold text-xl tracking-tight">PostBro</span>
           </Link>
         </div>

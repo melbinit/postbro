@@ -43,7 +43,7 @@ export function FAQSection() {
         <FadeInUp delay={0.1}>
           <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
             <p className="text-[10px] sm:text-xs font-semibold text-primary uppercase tracking-wider mb-3 sm:mb-4">FAQ</p>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
               Frequently Asked Questions
             </h2>
             <p className="text-muted-foreground text-base sm:text-lg">

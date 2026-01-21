@@ -7,7 +7,8 @@ export function FontLoader() {
     // Check if links already exist
     const existingPreconnect1 = document.querySelector('link[href="https://fonts.googleapis.com"]')
     const existingPreconnect2 = document.querySelector('link[href="https://fonts.gstatic.com"]')
-    const existingFont = document.querySelector('link[href*="family=Geist"]')
+    const existingInter = document.querySelector('link[href*="family=Inter"]')
+    const existingPoppins = document.querySelector('link[href*="family=Poppins"]')
 
     if (!existingPreconnect1) {
       const link1 = document.createElement('link')
@@ -24,11 +25,20 @@ export function FontLoader() {
       document.head.appendChild(link2)
     }
 
-    if (!existingFont) {
-      const link3 = document.createElement('link')
-      link3.href = 'https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap'
-      link3.rel = 'stylesheet'
-      document.head.appendChild(link3)
+    // Load Inter for body text & UI
+    if (!existingInter) {
+      const linkInter = document.createElement('link')
+      linkInter.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'
+      linkInter.rel = 'stylesheet'
+      document.head.appendChild(linkInter)
+    }
+
+    // Load Poppins for headings & marketing
+    if (!existingPoppins) {
+      const linkPoppins = document.createElement('link')
+      linkPoppins.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap'
+      linkPoppins.rel = 'stylesheet'
+      document.head.appendChild(linkPoppins)
     }
   }, [])
 

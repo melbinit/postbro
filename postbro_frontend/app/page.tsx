@@ -1,6 +1,7 @@
 "use client"
 
 import { HeroSection } from "@/components/landing/hero-section"
+import { SupportedPlatformsSection } from "@/components/landing/supported-platforms-section"
 import { FeaturesSection } from "@/components/landing/features-section"
 import { HowItWorksSection } from "@/components/landing/how-it-works-section"
 import { PricingSection } from "@/components/landing/pricing-section"
@@ -34,13 +35,14 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       <LandingHeader />
       <main className="flex-1">
         <HeroSection />
+        <SupportedPlatformsSection />
+        <SocialProofSection />
         <FeaturesSection />
         <HowItWorksSection />
-        <SocialProofSection />
         <PricingSection />
         <FAQSection />
       </main>
